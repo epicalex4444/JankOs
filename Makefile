@@ -11,7 +11,7 @@ BOOT_BIN := $(BUILD_DIR)/boot.bin
 BOOT_ASMS := $(wildcard $(BOOT_DIR)/*.asm)
 
 #flags
-NASM_FLAGS := -f bin
+NASM_FLAGS := -f bin -I$(BOOT_DIR)
 QEMU_FLAGS := -cpu Opteron_G5,+ibpb,+stibp,+virt-ssbd,+amd-ssbd,+amd-no-ssb,+pdpe1gb, -drive file=$(BOOT_BIN),format=raw -monitor stdio
 
 #build with optimisation or debugging
