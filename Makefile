@@ -8,11 +8,13 @@ BUILD_DIR := $(BASE_DIR)/build
 
 #files
 BOOT_BIN := $(BUILD_DIR)/boot.bin
+SPACE_BIN := $(BUILD_DIR)/extended_space.bin
+OS_BIN := $(BUILD_DIR)/JankOs.bin
 BOOT_ASMS := $(wildcard $(BOOT_DIR)/*.asm)
 
 #flags
 NASM_FLAGS := -f bin -I$(BOOT_DIR)
-QEMU_FLAGS := -cpu Opteron_G5,+ibpb,+stibp,+virt-ssbd,+amd-ssbd,+amd-no-ssb,+pdpe1gb, -drive file=$(BOOT_BIN),format=raw -monitor stdio
+QEMU_FLAGS := -cpu Opteron_G5,+ibpb,+stibp,+virt-ssbd,+amd-ssbd,+amd-no-ssb,+pdpe1gb, -drive file=$(OS_BIN),format=raw -monitor stdio
 
 #build with optimisation or debugging
 RELEASE := false
@@ -24,7 +26,7 @@ endif
 
 .PHONY: all clean run debug
 
-all: $(BOOT_BIN)
+all: $(OS_BIN)
 
 clean:
 	rm -f $(BUILD_DIR)/*
@@ -32,11 +34,19 @@ clean:
 run: all
 	qemu-system-x86_64 $(QEMU_FLAGS)
 
-debug: all
+#opens qemu for gdb debugging
+#TODO automatically connect gdb
+gdb: all
 	qemu-system-x86_64 $(QEMU_FLAGS) -s -S
 
-$(BOOT_BIN): $(BOOT_ASMS) | $(BUILD_DIR)
+$(OS_BIN): $(BOOT_BIN) $(SPACE_BIN) | $(BUILD_DIR)
+	cat $^ > $@
+
+$(BOOT_BIN): $(BOOT_ASMS)
 	nasm $(NASM_FLAGS) $(BOOT_DIR)/boot.asm -o $@
+
+$(SPACE_BIN): $(BOOT_ASMS)
+	nasm $(NASM_FLAGS) $(BOOT_DIR)/extended_space.asm -o $@
 
 $(BUILD_DIR):
 	mkdir $@
