@@ -4,7 +4,12 @@
 ;   dl = drive
 ;returns: none
 read_disk:
-    pusha
+    push ax
+    push bx
+    push cx
+    push dx
+    push es
+
     mov bx, 0x0000
     mov es, bx
     mov bx, 0x7E00 ;es:bx is start read address
@@ -14,7 +19,12 @@ read_disk:
     mov ah, 0x02 ;load bios sector read function
     int 0x13 ;call bios interupt
     jc disk_error
-    popa
+
+    pop es
+    pop dx
+    pop cx
+    pop bx
+    pop ax
     ret
 
 disk_error:
