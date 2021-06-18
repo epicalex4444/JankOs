@@ -1,4 +1,3 @@
-;mode: 16bit
 ;params: 
 ;   al = sectors to read, al > 0 and < 128
 ;   dl = drive

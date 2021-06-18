@@ -1,4 +1,3 @@
-;mode: 16 bit
 ;params: bx = address of null terminated string
 ;returns: none
 print_16:
@@ -55,7 +54,6 @@ print_16:
         pop ax             ;
         ret                ;
 
-;mode: any
 ;params: none
 ;returns: ax = cursor pos
 get_cursor_16:
@@ -81,7 +79,6 @@ get_cursor_16:
     pop dx
     ret
 
-;mode: any
 ;params: bx = cursor pos
 ;returns: none
 set_cursor_16:

@@ -1,4 +1,3 @@
-;mode: 32/64 bit
 ;params: edx = address of null terminated string
 ;returns: none
 print_32:
@@ -53,7 +52,6 @@ print_32:
         pop eax            ;
         ret                ;
 
-;mode: any
 ;params: none
 ;returns: ax = cursor pos
 get_cursor_32:
@@ -79,7 +77,6 @@ get_cursor_32:
     pop dx
     ret
 
-;mode: any
 ;params: bx = cursor pos
 ;returns: none
 set_cursor_32:
