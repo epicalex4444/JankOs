@@ -9,8 +9,18 @@
 ;and is going to rely upon the cpu to optimise things once it is loaded.
 
 [org 0x7C00]
+[bits 16]
+
+mov bx, HELLO_MSG
+call print
 
 jmp $
 
+%include "print.asm"
+
+HELLO_MSG:
+    db "Hello, World!", 0x0A, 0x00
+
+;make file 512 bytes and add boot signature(both needed to run)
 times 510 - ($ - $$) db 0x00
 dw 0xAA55
