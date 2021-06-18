@@ -68,28 +68,28 @@ get_cursor:
     ;to use the port output the index then
     ;use port 0x03D5 to set/read the value
 
-	mov dx, 0x03D4 ;misc vga I/O port
+    mov dx, 0x03D4 ;misc vga I/O port
 
     mov al, 0x0E
-	out dx, al ;output index for cursor high
+    out dx, al ;output index for cursor high
     
-	inc dl
-	in al, dx ;input cursor high
+    inc dl
+    in al, dx ;input cursor high
     
     shl ax, 8 ;move to the high register
 
-	dec dl
-	mov al, 0x0F
-	out dx, al ;output index for cursor low
+    dec dl
+    mov al, 0x0F
+    out dx, al ;output index for cursor low
 
-	inc dl
-	in al, dx ;input cursor low
+    inc dl
+    in al, dx ;input cursor low
     
     mov bx, ax
 
     pop ax
     pop dx
-	ret
+    ret
 
 ;mode: any
 ;use type: call
@@ -106,24 +106,24 @@ set_cursor:
     ;to use the port output the index then
     ;inc the port to set/read the value
 
-	mov dx, 0x03D4 ;misc vga I/O port
+    mov dx, 0x03D4 ;misc vga I/O port
 
-	mov al, 0x0F
-	out dx, al ;output index for cursor low
+    mov al, 0x0F
+    out dx, al ;output index for cursor low
 
-	inc dl
-	mov al, bl
-	out dx, al ;output cursor low
+    inc dl
+    mov al, bl
+    out dx, al ;output cursor low
 
-	dec dl
-	mov al, 0x0E
-	out dx, al ;output index for cursor high
+    dec dl
+    mov al, 0x0E
+    out dx, al ;output index for cursor high
     
-	inc dl
-	mov al, bh
-	out dx, al ;output cursor high
+    inc dl
+    mov al, bh
+    out dx, al ;output cursor high
     
     pop dx
     pop bx
     pop ax
-	ret
+    ret
