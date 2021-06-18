@@ -29,7 +29,7 @@ read_disk:
 
 disk_error:
     mov bx, disk_error_str
-    call print
+    call print_16
     jmp $
 
 disk_error_str:
