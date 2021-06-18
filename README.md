@@ -25,7 +25,7 @@ I am using vscode, make, and gdb to aid in development.
 
 ### hardware
 I will design the os around very specific hardware to save time.  
-https://pcpartpicker.com/list/mcwkQD  
+https://pcpartpicker.com/list/q4DynL  
 
 ### documentation
 doxygen is going to be used to generate pdf files.  
