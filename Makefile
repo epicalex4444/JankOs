@@ -29,10 +29,10 @@ all: $(BOOT_BIN)
 clean:
 	rm -f $(BUILD_DIR)/*
 
-run:
+run: all
 	qemu-system-x86_64 $(QEMU_FLAGS)
 
-debug:
+debug: all
 	qemu-system-x86_64 $(QEMU_FLAGS) -s -S
 
 $(BOOT_BIN): $(BOOT_ASMS) | $(BUILD_DIR)
