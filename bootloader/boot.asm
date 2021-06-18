@@ -3,7 +3,7 @@
 ;uninitialised. Our job is to get the cpu to long mode, enable the A20 line,
 ;initialise the kernel and then hand over to the kernel.
 ;I also am going to initialise the kernel with the memory map,
-;because it should be done with the bios
+;because it should be done with the bios.
 
 ;This bootlooder is not going to load the kernel if the those tasks 
 ;can't be completed and will instead log an error and hang.
@@ -17,19 +17,19 @@
 mov bp, 0x7C00
 mov sp, bp
 
-;bios automatically loads boot drive into dl
-mov al, 0x04
-call read_disk
-
-;need add memory map here since it uses bios interupts
-
-;bios interupts shouldn't be used form here onwards
-cli
-
 ;enable the A20 line
 in al, 0x92
 or al, 0x02
 out 0x92, al
+
+;bios automatically loads boot drive into dl
+mov al, 0x04
+call read_disk
+
+;need to add memory map here since it uses bios interupts
+
+;bios interupts shouldn't be used form here onwards
+cli
 
 ;load the gdt
 lgdt [gdt_descriptor]
@@ -39,7 +39,7 @@ mov eax, cr0
 or eax, 0x1
 mov cr0, eax
 
-;far jump avoid pipelining issues
+;far jump to avoid pipelining issues
 jmp CODE_SEG:pm
 
 %include "print_16.asm" ;relies on vga, which is not always supported
