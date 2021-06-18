@@ -48,11 +48,11 @@ print:
         shr ax, 0x0001  ;divide vga memory address by 2
         mov bx, ax      ;mov it into bx
         call set_cursor ;set the cursor to where it should be
-        push es         ;
-        push dx         ;
-        push cx         ;
-        push bx         ;
-        push ax         ;
+        pop es          ;
+        pop dx          ;
+        pop cx          ;
+        pop bx          ;
+        pop ax          ;
         ret             ;
 
 ;mode: any
