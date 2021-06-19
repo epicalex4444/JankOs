@@ -62,6 +62,8 @@ mov es, ax
 mov fs, ax
 mov gs, ax
 
+call detect_long_mode
+
 ;hang
 jmp $
 
@@ -70,5 +72,7 @@ jmp $
 ;make file 512 bytes and add boot signature(both needed to run)
 times 510 - ($ - $$) db 0x00
 dw 0xAA55
+
+%include "detect_long_mode.asm"
 
 times 2560 - ($ - $$) db 0x00
