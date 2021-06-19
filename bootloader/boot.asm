@@ -69,3 +69,5 @@ jmp $
 ;make file 512 bytes and add boot signature(both needed to run)
 times 510 - ($ - $$) db 0x00
 dw 0xAA55
+
+times 2560 - ($ - $$) db 0x00
