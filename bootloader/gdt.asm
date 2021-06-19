@@ -18,23 +18,17 @@
 ;data segment - same as code segment except
 ;executable = 0b
 
+;because of little endianes db, dw and dd are backwards
+
 gdt_start:
     dd 0x00000000
     dd 0x00000000
 gdt_code:
-    dw 0xFFFF
-    dw 0x0000
-    db 0x00
-    db 10011010b
-    db 11001111b
-    db 0x00
+    dd 0x0000FFFF
+    dd 0x00CF9A00
 gdt_data:
-    dw 0xFFFF
-    dw 0x0000
-    db 0x00
-    db 10010010b
-    db 11001111b
-    db 0x00
+    dd 0x0000FFFF
+    dd 0x00CF9200
 gdt_end:
 
 ;first 2 bytes is gdt size - 1

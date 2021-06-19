@@ -17,11 +17,12 @@
 mov bp, 0x7C00
 mov sp, bp
 
-;enable the A20 line
+;enable the A20 line - this doesn't always work
 in al, 0x92
 or al, 0x02
 out 0x92, al
 
+;read sectors 1-5 - sectors are 512 bytes
 ;bios automatically loads boot drive into dl
 mov al, 0x04
 call read_disk
@@ -50,10 +51,10 @@ jmp CODE_SEG:pm
 
 pm:
 
-;disable bios interupts because they can't be used in protected mode
+;disable bios interupts - they are only meant for real mode
 cli
 
-;update stack registers
+;update stack registers - protected mode changes how segmenting works
 mov ax, DATA_SEG
 mov ds, ax
 mov ss, ax
