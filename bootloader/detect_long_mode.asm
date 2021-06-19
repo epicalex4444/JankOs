@@ -21,7 +21,7 @@ detect_long_mode:
     pop eax          ;copy back flags to the eax register
     xor eax, ecx     ;check if id bit was flipped, if not flipped cpuid is not supported
     jz cpuid_error   ;
-    push eax         ;
+    push ecx         ;
     popfd            ;restore previous flags register
 
     ;extended functions check
