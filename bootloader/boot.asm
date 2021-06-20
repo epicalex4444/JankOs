@@ -65,6 +65,10 @@ mov gs, ax
 call detect_long_mode
 call setup_paging
 
+;update gdt to use 64 bit mode - clear 16/32 0 and set 64 bit pin
+mov [CODE_SEG + 6], BYTE 0xAF
+mov [DATA_SEG + 6], BYTE 0xAF
+
 ;hang
 jmp $
 
