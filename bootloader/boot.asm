@@ -41,7 +41,7 @@ or eax, 0x1
 mov cr0, eax
 
 ;far jump to avoid pipelining issues
-jmp CODE_SEG:pm
+jmp CODE_SEG:protected_mode
 
 %include "print_16.asm" ;relies on vga, which is not always supported
 %include "read_disk.asm"
@@ -49,7 +49,7 @@ jmp CODE_SEG:pm
 
 [bits 32]
 
-pm:
+protected_mode:
 
 ;disable bios interupts - they are only meant for real mode
 cli
@@ -69,8 +69,14 @@ call setup_paging
 mov [CODE_SEG + 6], BYTE 0xAF
 mov [DATA_SEG + 6], BYTE 0xAF
 
-;hang
-jmp $
+;enable long mode
+mov ecx, 0xC0000080 ;set ecx to the efer msr
+rmdmsr              ;read the model specific register
+or eax, 1 << 8      ;set the long mode bit
+wrmsr               ;write the long mode bit to the efer msr
+
+;far jump to avoid pipelining issues
+jmp CODE_SEG:long_mode
 
 %include "print_32.asm" ;relies on vga, which is not always supported
 
@@ -80,5 +86,12 @@ dw 0xAA55
 
 %include "detect_long_mode.asm"
 %include "paging.asm"
+
+[bits 64]
+
+long_mode:
+
+;hang
+jmp $
 
 times 2560 - ($ - $$) db 0x00
