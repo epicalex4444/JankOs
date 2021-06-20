@@ -63,6 +63,7 @@ mov fs, ax
 mov gs, ax
 
 call detect_long_mode
+call setup_paging
 
 ;hang
 jmp $
@@ -74,5 +75,6 @@ times 510 - ($ - $$) db 0x00
 dw 0xAA55
 
 %include "detect_long_mode.asm"
+%include "paging.asm"
 
 times 2560 - ($ - $$) db 0x00
