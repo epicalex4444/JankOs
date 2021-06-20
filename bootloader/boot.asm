@@ -24,7 +24,7 @@ out 0x92, al
 
 ;read sectors 1-5 - sectors are 512 bytes
 ;bios automatically loads boot drive into dl
-mov al, 0x04
+mov al, 0x01
 call read_disk
 
 ;need to add memory map here since it uses bios interupts
@@ -97,4 +97,4 @@ long_mode:
 ;hang
 jmp $
 
-times 2560 - ($ - $$) db 0x00
+times 1024 - ($ - $$) db 0x00
