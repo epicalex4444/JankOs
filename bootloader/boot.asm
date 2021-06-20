@@ -80,9 +80,12 @@ jmp CODE_SEG:long_mode
 
 %include "print_32.asm" ;relies on vga, which is not always supported
 
-;make file 512 bytes and add boot signature(both needed to run)
+;pad boot sector with 0's and add boot signature
 times 510 - ($ - $$) db 0x00
 dw 0xAA55
+
+;extra stuff down here because not everything fit into 512 bytes
+;this stuff has to be read first before getting used
 
 %include "detect_long_mode.asm"
 %include "paging.asm"
