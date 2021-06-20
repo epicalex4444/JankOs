@@ -71,7 +71,7 @@ mov [DATA_SEG + 6], BYTE 0xAF
 
 ;enable long mode
 mov ecx, 0xC0000080 ;set ecx to the efer msr
-rmdmsr              ;read the model specific register
+rdmsr               ;read the model specific register
 or eax, 1 << 8      ;set the long mode bit
 wrmsr               ;write the long mode bit to the efer msr
 
