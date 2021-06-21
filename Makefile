@@ -19,7 +19,7 @@ NASM_FLAGS := -f elf64 -I$(BOOT_DIR)
 QEMU_FLAGS := -cpu Opteron_G5,+ibpb,+stibp,+virt-ssbd,+amd-ssbd,+amd-no-ssb,+pdpe1gb, -drive file=$(BOOT_BIN),format=raw -monitor stdio
 
 LD := x86_64-elf-ld
-LDFLAGS := -nostdlib -T	link.ld
+LDFLAGS := -nostdlib -T link.ld
 
 #build with optimisation or debugging
 RELEASE := false
