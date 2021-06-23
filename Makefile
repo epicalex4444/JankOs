@@ -30,20 +30,23 @@ else
 	LDFLAGS += -O2
 endif
 
-.PHONY: all clean run debug
+.PHONY: all clean qemu qemu-gdb bochs
 
 all: $(BOOT_BIN)
 
 clean:
 	rm -f $(BUILD_DIR)/*
 
-run: all
+qemu: all
 	qemu-system-x86_64 $(QEMU_FLAGS)
 
 #opens qemu for gdb debugging
 #TODO automatically connect gdb
-gdb: all
+qemu-gdb: all
 	qemu-system-x86_64 $(QEMU_FLAGS) -s -S
+
+bochs: all
+	bochs -f bochsrc -log bochslog -dbglog bochsdblog
 
 $(BOOT_OBJ): $(BOOT_ASMS) | $(BUILD_DIR)
 	nasm $(NASM_FLAGS) $(BOOT_DIR)/boot.asm -o $@

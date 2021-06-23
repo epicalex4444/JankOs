@@ -1,0 +1,8 @@
+config_interface: wx
+display_library: wx
+cpu: count=1
+cpuid: level=6, family=6, model=14, stepping=11, vendor_string=GenuineIntel, apic=x2apic, simd=avx2, mmx=true, aes=true, movbe=true, adx=true, xsave=true, xsaveopt=true, bmi=true, x86_64=true, 1g_pages=true, pcid=true, smep=true, mwait=true, vmx=true
+romimage: file=/usr/share/bochs/VGABIOS-lgpl-latest, options=fastboot
+mouse: enabled=0
+clock: sync=none, time0=local
+boot: floppy

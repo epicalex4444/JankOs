@@ -1,5 +1,9 @@
 #building files
 build
 
+#bochs log files
+bochslog
+bochsdbglog
+
 #misc
 .vscode
