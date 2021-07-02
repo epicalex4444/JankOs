@@ -2,9 +2,8 @@
 MAKEFLAGS += -r -R
 
 #diretories
-BASE_DIR := $(shell pwd)
-BOOT_DIR := $(BASE_DIR)/bootloader
-BUILD_DIR := $(BASE_DIR)/build
+BOOT_DIR := bootloader
+BUILD_DIR := build
 
 #files
 BOOT_BIN := $(BUILD_DIR)/boot.bin
@@ -14,12 +13,9 @@ OS_BIN := $(BUILD_DIR)/JankOs.bin
 BOOT_ASMS := $(wildcard $(BOOT_DIR)/*.asm)
 
 #command options
-NASM_FLAGS := -f elf64 -I$(BOOT_DIR)
+NASM_FLAGS := -f bin -I$(BOOT_DIR)
 
-QEMU_FLAGS := -cpu Opteron_G5,+ibpb,+stibp,+virt-ssbd,+amd-ssbd,+amd-no-ssb,+pdpe1gb, -drive file=$(BOOT_BIN),format=raw -monitor stdio
-
-LD := x86_64-elf-ld
-LDFLAGS := -nostdlib -T link.ld
+QEMU_FLAGS := -drive file=$(BOOT_BIN),format=raw -monitor stdio
 
 #build with optimisation or debugging
 RELEASE := false
@@ -30,7 +26,7 @@ else
 	LDFLAGS += -O2
 endif
 
-.PHONY: all clean qemu qemu-gdb bochs
+.PHONY: all clean qemu
 
 all: $(BOOT_BIN)
 
@@ -40,19 +36,8 @@ clean:
 qemu: all
 	qemu-system-x86_64 $(QEMU_FLAGS)
 
-#opens qemu for gdb debugging
-#TODO automatically connect gdb
-qemu-gdb: all
-	qemu-system-x86_64 $(QEMU_FLAGS) -s -S
-
-bochs: all
-	bochs -f bochsrc -log bochslog -dbglog bochsdblog
-
-$(BOOT_OBJ): $(BOOT_ASMS) | $(BUILD_DIR)
+$(BOOT_BIN): $(BOOT_ASMS)  | $(BUILD_DIR)
 	nasm $(NASM_FLAGS) $(BOOT_DIR)/boot.asm -o $@
-
-$(BOOT_BIN): $(BOOT_OBJ)
-	$(LD) $(LDFLAGS) $^ -o $@
 
 $(BUILD_DIR):
 	mkdir $@

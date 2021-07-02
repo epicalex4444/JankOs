@@ -10,6 +10,7 @@
 ;This bootloader is also going to do the bare minimum to achieve those tasks
 ;and is going to rely upon the kernel to optimise things once it is loaded.
 
+[org 0x7C00]
 [bits 16]
 
 ;move stack out of the way
