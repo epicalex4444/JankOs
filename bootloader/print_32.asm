@@ -12,9 +12,9 @@ print_32:
     ;because the address is to large for 16 but use (es)segment register
     ;address es:bx = es << 4 + bx
 
-    mov ch, 0x0F            ;load white on black style
-    mov ebx, 0xB8000        ;
-    mov eax, 0              ;
+    mov ch, 0x0F           ;load white on black style
+    mov ebx, 0xB8000       ;
+    mov eax, 0             ;
     call get_cursor_32     ;
     shl ax, 0x0001         ;multiply on 2 because vga uses 2 bytes per char
     add ebx, eax           ;
@@ -22,25 +22,9 @@ print_32:
         mov cl, [edx]      ;move the charecter into dl
         test cl, cl        ;check if char is 0 which means end of string
         jz .exit           ;
-        cmp cl, 0x0A       ;check for newline char
-        jz .newline        ;
         mov [ebx], cx      ;write char into video memory
         inc edx            ;next char
         add ebx, 2         ;next memory location write
-        jmp .loop          ;
-    .newline:              ;
-        push dx            ;
-        push cx            ;
-        mov cx, ax         ;copy memory address for later
-        mov dl, 0xA0       ;load divisor
-        div dl             ;divide, ah=remainder, al=quotient
-        shr ax, 0x08       ;make ax = only the remainder
-        sub cx, ax         ;minus remainder from address(makes x = 0)
-        add cx, 0xA0       ;move down 1 line
-        mov ax, cx         ;move memory adress back to ax
-        inc bx             ;next char
-        pop cx             ;
-        pop dx             ;
         jmp .loop          ;
     .exit:                 ;
         sub ebx, 0xB8000   ;
