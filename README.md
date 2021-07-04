@@ -23,10 +23,6 @@ For the bios I am using seabios for development but I want to have it work with 
 I will be using assembly(nasm) and c(gcc) for developing the os and qemu for emulating it.  
 I am using vscode, make, and gdb to aid in development.  
 
-### hardware
-I will design the os around very specific hardware to save time.  
-https://pcpartpicker.com/list/q4DynL  
-
 ### documentation
 doxygen is going to be used to generate pdf files.  
 documentation in docs folder.  
