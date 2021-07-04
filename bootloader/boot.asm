@@ -206,8 +206,8 @@ mov [edi], rax
 ;[extern _start]
 ;jmp _start
 
-;hang
-jmp $
+;jank workaround to jumping to start function
+jmp 0x7E00
 
 times 510-($-$$) db 0 ;pad boot sector
 dw 0xAA55 ;add boot signature
