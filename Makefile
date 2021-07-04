@@ -47,7 +47,7 @@ qemu: all
 $(BOOT_BIN): $(BOOT_ASMS) | $(BUILD_DIR)
 	nasm $(NASM_FLAGS) $(BOOT_DIR)/boot.asm -o $@
 
-kernel/obj/main.o: kernel/src/main.c
+kernel/obj/main.o: kernel/src/main.c | $(KERNEL_OBJ_DIR)
 	gcc $(CC_FLAGS) $^ -o $@
 
 build/kernel.bin: kernel/obj/main.o
@@ -56,5 +56,5 @@ build/kernel.bin: kernel/obj/main.o
 build/JankOs.bin: $(BOOT_BIN) build/kernel.bin
 	cat $^ > $@
 
-$(BUILD_DIR):
+$(BUILD_DIR) $(KERNEL_OBJ_DIR):
 	mkdir $@
