@@ -1,5 +1,7 @@
 #building files
 build
+kernel/obj
+kernel/dep
 
 #misc
 .vscode
