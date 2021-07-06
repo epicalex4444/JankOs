@@ -1,6 +1,8 @@
 #removes built in rules and variables
 MAKEFLAGS += -r -R
 
+OS_NAME := JankOs
+
 #diretories
 BOOT_DIR := bootloader
 BUILD_DIR := build
@@ -12,13 +14,22 @@ KERNEL_DEP_DIR := $(KERNEL_DIR)/dep
 
 #files
 BOOT_BIN := $(BUILD_DIR)/boot.bin
+BOOT_ASM := $(BOOT_DIR)/boot.asm
 BOOT_ASMS := $(wildcard $(BOOT_DIR)/*.asm)
+KERNEL_ENTRY_ASM := $(KERNEL_SRC_DIR)/kernel_entry.asm
+KERNEL_ENTRY_OBJ := $(KERNEL_OBJ_DIR)/kernel_entry.o
+KERNEL_SRCS := $(wildcard $(KERNEL_SRC_DIR)/*.c)
+KERNEL_OBJS := $(subst src,obj,$(subst .c,.o,$(KERNEL_SRCS)))
+KERNEL_DEPS := $(subst src,dep,$(subst .c,.d,$(KERNEL_SRCS)))
+LINKER_SCRIPT := link.ld
+KERNEL_BIN := $(BUILD_DIR)/kernel.bin
+OS_BIN := $(BUILD_DIR)/$(OS_NAME).bin
 
 #command options
-NASM_FLAGS := -f bin -I$(BOOT_DIR)
+NASM_FLAGS := 
 QEMU_FLAGS := -drive file=build/JankOs.bin,format=raw
-LD_FLAGS := -nostdlib -T link.ld
-CC_FLAGS := -std=gnu18 -m64 -ffreestanding -nostdinc -I$(KERNEL_INC_DIR) -c 
+LD_FLAGS := -nostdlib -T$(LINKER_SCRIPT)
+CC_FLAGS := -std=gnu18 -m64 -ffreestanding -nostdinc -I$(KERNEL_INC_DIR)
 
 #build with optimisation or debugging
 RELEASE := false
@@ -34,27 +45,40 @@ endif
 
 .PHONY: all clean qemu
 
-all: build/JankOs.bin
+all: $(OS_BIN)
 
 clean:
 	rm -f $(BUILD_DIR)/*
-	rm -f kernel/obj/*
-	rm -f kernel/dep/*
+	rm -f $(KERNEL_OBJ_DIR)/*
+	rm -f $(KERNEL_DEP_DIR)/*
 
 qemu: all
 	qemu-system-x86_64 $(QEMU_FLAGS)
 
+#tell make which headers are needed for which source files
+#make will use the dependency file rule if it needs to
+include $(KERNEL_DEPS)
+
 $(BOOT_BIN): $(BOOT_ASMS) | $(BUILD_DIR)
-	nasm $(NASM_FLAGS) $(BOOT_DIR)/boot.asm -o $@
+	nasm -f bin -Ibootloader $(NASM_FLAGS) $(BOOT_ASM) -o $@
 
-kernel/obj/main.o: kernel/src/main.c | $(KERNEL_OBJ_DIR)
-	gcc $(CC_FLAGS) $^ -o $@
+$(KERNEL_ENTRY_OBJ): $(KERNEL_ENTRY_ASM)
+	nasm -f elf64 $(NASM_FLAGS) $< -o $@
 
-build/kernel.bin: kernel/obj/main.o
+#rule for all kernel objects except kernel_entry.o
+$(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC_DIR)/%.c | $(KERNEL_OBJ_DIR)
+	gcc $(CC_FLAGS) -c $^ -o $@
+
+#rule for all kernel dependency files
+$(KERNEL_DEP_DIR)/%.d: $(KERNEL_SRC_DIR)/%.c | $(KERNEL_DEP_DIR)
+	gcc $(CC_FLAGS) -MM $^ -o $@
+
+#linker respects order of files provided, KERNEL_ENTRY_OBJ has to be the first
+$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
 	ld $(LD_FLAGS) $^ -o $@
 
-build/JankOs.bin: $(BOOT_BIN) build/kernel.bin
+$(OS_BIN): $(BOOT_BIN) $(KERNEL_BIN)
 	cat $^ > $@
 
-$(BUILD_DIR) $(KERNEL_OBJ_DIR):
+$(BUILD_DIR) $(KERNEL_OBJ_DIR) $(KERNEL_DEP_DIR):
 	mkdir $@
