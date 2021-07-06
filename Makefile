@@ -61,7 +61,7 @@ qemu: all
 #make will use the dependency file rule if it needs to
 include $(KERNEL_DEPS)
 
-$(BOOT_BIN): $(BOOT_ASMS) | $(BUILD_DIR)
+$(BOOT_BIN): $(BOOT_ASMS)
 	nasm -f bin -Ibootloader $(NASM_FLAGS) $(BOOT_ASM) -o $@
 
 $(KERNEL_ENTRY_OBJ): $(KERNEL_ENTRY_ASM)
@@ -79,7 +79,7 @@ $(KERNEL_DEP_DIR)/%.d: $(KERNEL_SRC_DIR)/%.c | $(KERNEL_DEP_DIR)
 $(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
 	$(LD) $(LD_FLAGS) $^ -o $@
 
-$(OS_BIN): $(BOOT_BIN) $(KERNEL_BIN)
+$(OS_BIN): $(BOOT_BIN) $(KERNEL_BIN) | $(BUILD_DIR)
 	cat $^ > $@
 
 $(BUILD_DIR) $(KERNEL_OBJ_DIR) $(KERNEL_DEP_DIR):
