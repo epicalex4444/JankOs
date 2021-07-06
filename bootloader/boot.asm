@@ -198,14 +198,7 @@ cli
 mov rax, 0x1F741F731F651F54
 mov [0x00b8000], rax
 
-;jump to kernel
-;extern doesn't work when compiling into a binary
-;no extern doesn't work because _start isn't defined
-;compiling to an object and linking it makes it an invalid bootsector
-;[extern _start]
-;jmp _start
-
-;jank workaround to jumping to start function
+;jump to kernel (jumps to kernel_entry.asm)
 jmp 0x7E00
 
 times 510-($-$$) db 0 ;pad boot sector
