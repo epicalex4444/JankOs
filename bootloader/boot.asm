@@ -194,10 +194,6 @@ mov ss, ax
 ;disable interupts
 cli
 
-;check 64 bit registers are working
-mov rax, 0x1F741F731F651F54
-mov [0x00b8000], rax
-
 ;jump to kernel (jumps to kernel_entry.asm)
 jmp 0x7E00
 
