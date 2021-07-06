@@ -27,7 +27,7 @@ OS_BIN := $(BUILD_DIR)/$(OS_NAME).bin
 
 #command options
 NASM_FLAGS := 
-QEMU_FLAGS := -drive file=build/JankOs.bin,format=raw
+QEMU_FLAGS := -drive file=$(OS_BIN),format=raw
 LD_FLAGS := -nostdlib -T$(LINKER_SCRIPT)
 CC_FLAGS := -std=gnu18 -m64 -ffreestanding -nostdinc -I$(KERNEL_INC_DIR)
 
