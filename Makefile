@@ -62,7 +62,7 @@ qemu: all
 include $(KERNEL_DEPS)
 
 $(BOOT_BIN): $(BOOT_ASMS)
-	nasm -f bin -Ibootloader $(NASM_FLAGS) $(BOOT_ASM) -o $@
+	nasm -f bin -I$(BOOT_DIR) $(NASM_FLAGS) $(BOOT_ASM) -o $@
 
 $(KERNEL_ENTRY_OBJ): $(KERNEL_ENTRY_ASM)
 	nasm -f elf64 $(NASM_FLAGS) $< -o $@
