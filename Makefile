@@ -26,10 +26,12 @@ KERNEL_BIN := $(BUILD_DIR)/kernel.bin
 OS_BIN := $(BUILD_DIR)/$(OS_NAME).bin
 
 #command options
+CC := x86_64-elf-gcc
+LD := x86_64-elf-ld
 NASM_FLAGS := 
 QEMU_FLAGS := -drive file=$(OS_BIN),format=raw
 LD_FLAGS := -nostdlib -T$(LINKER_SCRIPT)
-CC_FLAGS := -std=gnu18 -m64 -ffreestanding -nostdinc -I$(KERNEL_INC_DIR)
+CC_FLAGS := -std=gnu18 -ffreestanding -mno-red-zone -I$(KERNEL_INC_DIR) -c
 
 #build with optimisation or debugging
 RELEASE := false
@@ -67,15 +69,15 @@ $(KERNEL_ENTRY_OBJ): $(KERNEL_ENTRY_ASM)
 
 #rule for all kernel objects except kernel_entry.o
 $(KERNEL_OBJ_DIR)/%.o: $(KERNEL_SRC_DIR)/%.c | $(KERNEL_OBJ_DIR)
-	gcc $(CC_FLAGS) -c $^ -o $@
+	$(CC) $(CC_FLAGS) $^ -o $@
 
 #rule for all kernel dependency files
 $(KERNEL_DEP_DIR)/%.d: $(KERNEL_SRC_DIR)/%.c | $(KERNEL_DEP_DIR)
-	gcc $(CC_FLAGS) -MM $^ -o $@
+	$(CC) -I$(KERNEL_INC_DIR) -MM $^ -o $@
 
 #linker respects order of files provided, KERNEL_ENTRY_OBJ has to be the first
 $(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
-	ld $(LD_FLAGS) $^ -o $@
+	$(LD) $(LD_FLAGS) $^ -o $@
 
 $(OS_BIN): $(BOOT_BIN) $(KERNEL_BIN)
 	cat $^ > $@
