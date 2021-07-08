@@ -24,7 +24,7 @@ push dx
 mov ah, 0x06
 xor al, al
 xor bx, bx
-mov bh, 0x07
+mov bh, 0x0F
 xor cx, cx
 mov dh, 0x18
 mov dl, 0x4F
