@@ -86,6 +86,19 @@ cpuid               ;
 test edx, 1 << 29   ;test if long mode bit is set
 jz error.long_mode  ;
 
+;generate memory map for the kernel to use
+mov edx, 0x534D4150   ;smap code
+mov di, 0x5000        ;base address for memory map
+mov ebx, 0            ;continuation value, starts 0
+memoryMapLoop:        ;
+    mov eax, 0xE820   ;memory map bios function
+    mov ecx, 24       ;buffer size
+    int 0x15          ;call memory map interupt
+    jc error.mm       ;
+    add di, 24        ;iterate di
+    cmp ebx, 0        ;check if finished
+    jne memoryMapLoop ;
+
 ;setup identity paging for the first 2 megabytes
 ;the present bit an read/write bit is set on all entires
 mov edi, 0x1000            ;PML4 start address
@@ -99,11 +112,11 @@ mov DWORD [0x3000], 0x4003 ;point PD to PT
 mov edi, 0x4000            ;PT start address
 mov ebx, 0x00000003        ;start value
 mov ecx, 512               ;512 iterations
-setEntry:                  ;
+pagingLoop:                ;
     mov DWORD [edi], ebx   ;write entry
     add ebx, 0x1000        ;update ebx to point to next memory location
     add edi, 8             ;update edi to next PT entry
-    loop setEntry          ;
+    loop pagingLoop        ;
 
 ;load gdt
 lgdt [gdt.descriptor]
@@ -174,6 +187,9 @@ error:
         jmp .end
     .long_mode:
         mov bx, LONG_MODE_ERROR
+        jmp .end
+    .mm:
+        mov bx, MM_ERROR
     .end:
         call print_16
         jmp $
@@ -183,8 +199,12 @@ DISK_READ_ERROR: db 'Disk Read Error', 0
 CPUID_ERROR:     db 'CPUID Not Supported', 0
 EXT_FUNCS_ERROR: db 'Extended Functions Not Supported', 0
 LONG_MODE_ERROR: db 'Long Mode Not Supported', 0
+MM_ERROR:        db 'Memory Map Error', 0
 
 BOOT_DISK: db 0x00
+
+times 510 - ($ - $$) db 0 ;pad boot sector
+dw 0xAA55 ;add boot signature
 
 gdt:
 .null equ $ - gdt  ;
@@ -222,7 +242,7 @@ mov ss, ax
 cli
 
 ;jump to kernel (jumps to kernel_entry.asm)
-jmp 0x7E00
+jmp 0x8000
 
-times 510-($-$$) db 0 ;pad boot sector
-dw 0xAA55 ;add boot signature
+;additional sector
+times 1024 - ($ - $$) db 0
