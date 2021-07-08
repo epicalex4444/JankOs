@@ -88,7 +88,7 @@ jz error.long_mode  ;
 
 ;generate memory map for the kernel to use
 mov edx, 0x534D4150   ;smap code
-mov di, 0x5000        ;base address for memory map
+mov di, 0x500         ;base address for memory map
 mov ebx, 0            ;continuation value, starts 0
 memoryMapLoop:        ;
     mov eax, 0xE820   ;memory map bios function
