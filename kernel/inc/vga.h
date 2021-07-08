@@ -4,6 +4,7 @@
 #include "types.h"
 
 #define VGA_BASE (u16*)0xB8000
+#define VGA_LIMIT (u16*)0xBFD00
 #define VGA_WIDTH 80
 
 #define BLACK      0
@@ -30,8 +31,8 @@ typedef struct {
 
 void show_cursor(u8 scanline_start, u8 scanline_end);
 void hide_cursor(void);
-u16 get_cursor(void);
-void set_cursor(u16 pos);
+u16 get_cursor_pos(void);
+void set_cursor_pos(u16 pos);
 XY cursor_pos_to_xy(u16 pos);
 u16 xy_to_cursor_pos(XY xy);
 void write_char(u8 c, u8 front_colour, u8 back_colour, u16* adr);

@@ -14,13 +14,20 @@ void hide_cursor(void) {
     outb(0x3D5, 0x20);
 }
 
-u16 get_cursor(void) {
+u16 get_cursor_pos(void) {
     u16 pos = 0;
     outb(0x3D4, 0x0F);
     pos |= inb(0x3D5);
     outb(0x3D4, 0x0E);
     pos |= ((u16)inb(0x3D5)) << 8;
     return pos;
+}
+
+void set_cursor_pos(u16 pos) {
+	outb(0x3D4, 0x0F);
+	outb(0x3D5, (u8)(pos & 0xFF));
+	outb(0x3D4, 0x0E);
+	outb(0x3D5, (u8)((pos >> 8) & 0xFF));
 }
 
 XY cursor_pos_to_xy(u16 pos) {
@@ -32,13 +39,6 @@ XY cursor_pos_to_xy(u16 pos) {
 
 u16 xy_to_cursor_pos(XY xy) { 
     return (u16)(xy.y * VGA_WIDTH + xy.x);
-}
-
-void set_cursor(u16 pos) {
-	outb(0x3D4, 0x0F);
-	outb(0x3D5, (u8)(pos & 0xFF));
-	outb(0x3D4, 0x0E);
-	outb(0x3D5, (u8)((pos >> 8) & 0xFF));
 }
 
 //this function has the potential to write outside of video memory
