@@ -53,7 +53,7 @@ mov dh, 0          ;head
 mov ch, 0          ;cylinder
 mov cl, 2          ;sector, starts at 1
 mov bx, 0x7E00     ;address
-mov al, 1          ;sectors to load
+mov al, 3          ;sectors to load
 int 0x13           ;call bios interupt
 jc error.disk_read ;
 
