@@ -17,8 +17,8 @@ mov ss, ax
 ;move stack to below the boot sector
 mov sp, 0x7C00
 
-;save bootdisk on stack
-push dx
+;save bootdisk in memory
+mov BYTE [BOOT_DISK], dl
 
 ;clear screen
 mov ah, 0x06
@@ -46,16 +46,17 @@ in al, 92h
 or al, 02h
 out 92h, al
 
-;load next sector
-mov ah, 2          ;interupt code
-pop dx             ;disk, dl
-mov dh, 0          ;head
-mov ch, 0          ;cylinder
-mov cl, 2          ;sector, starts at 1
-mov bx, 0x7E00     ;address
-mov al, 3          ;sectors to load
-int 0x13           ;call bios interupt
-jc error.disk_read ;
+;load kernel into memory - capped at 255 sectors
+mov dl, [BOOT_DISK]     ;disk
+mov dh, 0xFF            ;max sectors
+loadLoop:               ;
+    mov al, dh          ;move sectors to read into al
+    call read_disk      ;try to load sectors into memory - error on 0 sectors skips returning so no infinite loop
+    dec dh              ;decrement sector count
+    jc loadLoop         ;check no error was returned
+    dec al              ;decrement al so the comparison works
+    cmp al, dh          ;check sectors read = sectors requested
+    jne loadLoop        ;
 
 ;cpuid check
 pushfd           ;
@@ -136,6 +137,30 @@ print_16:
         popa         ;
         ret          ;
 
+;params:
+;   dl = disk
+;   al = sectors
+;returns:
+;   carry flag set on error
+;   ah = status
+;   al = sectors_read
+read_disk:
+    cmp al, 0           ;check sectors > 0
+    je error.disk_read  ;
+    push bx             ;
+    push cx             ;
+    push dx             ;
+    mov ah, 2           ;interupt code
+    mov dh, 0           ;head
+    mov ch, 0           ;cylinder
+    mov cl, 2           ;sector, starts at 1
+    mov bx, 0x7E00      ;base address
+    int 0x13            ;call bios interupt
+    pop dx              ;
+    pop cx              ;
+    pop bx              ;
+    ret                 ;
+
 ;error handling, prints error messages then hangs
 error:
     .disk_read:
@@ -158,6 +183,8 @@ DISK_READ_ERROR: db 'Disk Read Error', 0
 CPUID_ERROR:     db 'CPUID Not Supported', 0
 EXT_FUNCS_ERROR: db 'Extended Functions Not Supported', 0
 LONG_MODE_ERROR: db 'Long Mode Not Supported', 0
+
+BOOT_DISK: db 0x00
 
 gdt:
 .null equ $ - gdt  ;
