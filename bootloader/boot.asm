@@ -51,7 +51,9 @@ mov dl, [BOOT_DISK]     ;disk
 mov dh, 0xFF            ;max sectors
 loadLoop:               ;
     mov al, dh          ;move sectors to read into al
-    call read_disk      ;try to load sectors into memory - error on 0 sectors skips returning so no infinite loop
+    cmp al, 0           ;check sectors > 0
+    je error.disk_read  ;
+    call read_disk      ;try to load sectors into memory
     dec dh              ;decrement sector count
     jc loadLoop         ;check no error was returned
     dec al              ;decrement al so the comparison works
@@ -145,8 +147,6 @@ print_16:
 ;   ah = status
 ;   al = sectors_read
 read_disk:
-    cmp al, 0           ;check sectors > 0
-    je error.disk_read  ;
     push bx             ;
     push cx             ;
     push dx             ;
