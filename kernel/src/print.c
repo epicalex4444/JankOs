@@ -17,7 +17,7 @@ bool print_string(i8* str) {
     u16 len = str_len(str);
 
     //disallow writing past video memory
-    if (adr + len - 1> VGA_LIMIT) {
+    if (adr + len - 1 > VGA_LIMIT) {
         return true;
     }
 
@@ -28,7 +28,7 @@ bool print_string(i8* str) {
     }
 
     //if there is no extra space for the cursor it is put at 0, 0
-    if (adr + len - 1== VGA_LIMIT) {
+    if (adr + len - 1 == VGA_LIMIT) {
         set_cursor_pos(0);
     } else {
         set_cursor_pos(len);
