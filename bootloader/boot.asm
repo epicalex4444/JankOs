@@ -2,9 +2,8 @@
 [bits 16]
 
 ;set cs to 0
-;some BIOS' may load us at 0x0000:0x7C00 while other may load us at 0x07C0:0x0000
-jmp 0x0000:flushCS
-flushCS:
+jmp 0x0000:clearCs
+clearCs:
 
 ;set all the segment registers to 0
 xor ax, ax
@@ -23,7 +22,6 @@ mov BYTE [BOOT_DISK], dl
 ;clear screen
 mov ah, 0x06
 xor al, al
-xor bx, bx
 mov bh, 0x0F
 xor cx, cx
 mov dh, 0x18
@@ -32,7 +30,7 @@ int 0x10
 
 ;hide cursor
 mov ah, 0x01
-mov cx, 0x2607
+mov cx, 0x2000
 int 0x10
 
 ;move cursor to the top left position
@@ -42,23 +40,9 @@ xor dx, dx
 int 0x10
 
 ;enable the A20 line - doesn't work on older systems
-in al, 92h
-or al, 02h
-out 92h, al
-
-;load kernel into memory - capped at 255 sectors
-mov dl, [BOOT_DISK]     ;disk
-mov dh, 0xFF            ;max sectors
-loadLoop:               ;
-    mov al, dh          ;move sectors to read into al
-    cmp al, 0           ;check sectors > 0
-    je error.disk_read  ;
-    call read_disk      ;try to load sectors into memory
-    dec dh              ;decrement sector count
-    jc loadLoop         ;check no error was returned
-    dec al              ;decrement al so the comparison works
-    cmp al, dh          ;check sectors read = sectors requested
-    jne loadLoop        ;
+in al, 0x92
+or al, 0x02
+out 0x92, al
 
 ;cpuid check
 pushfd           ;
@@ -75,29 +59,31 @@ push ecx         ;
 popfd            ;restore previous flags register
 
 ;extended functions check
-mov eax, 0x80000000 ;
+mov eax, 0x80000000 ;get highest ext function
 cpuid               ;
-cmp eax, 0x80000001 ;
+cmp eax, 0x80000001 ;check if 0x80000001 is available
 jb error.ext_funcs  ;
 
 ;long mode check
-mov eax, 0x80000001 ;
+mov eax, 0x80000001 ;get extended processor info
 cpuid               ;
 test edx, 1 << 29   ;test if long mode bit is set
 jz error.long_mode  ;
 
-;generate memory map for the kernel to use
-mov edx, 0x534D4150   ;smap code
-mov di, 0x500         ;base address for memory map
-mov ebx, 0            ;continuation value, starts 0
-memoryMapLoop:        ;
-    mov eax, 0xE820   ;memory map bios function
-    mov ecx, 24       ;buffer size
-    int 0x15          ;call memory map interupt
-    jc error.mm       ;
-    add di, 24        ;iterate di
-    cmp ebx, 0        ;check if finished
-    jne memoryMapLoop ;
+;loads rest of the bootloader and the kernel
+;capped at 255 sectors
+mov dl, [BOOT_DISK]     ;disk
+mov dh, 0xFF            ;max sectors
+loadLoop:               ;
+    mov al, dh          ;move sectors into al
+    cmp al, 1           ;error if sectors = 1
+    je error.disk_read  ;
+    call read_disk      ;try to load sectors into memory
+    dec dh              ;decrement sector count
+    jc loadLoop         ;check no error was returned
+    dec al              ;decrement al so the comparison works
+    cmp al, dh          ;check sectors read = sectors requested
+    jne loadLoop        ;
 
 ;setup identity paging for the first 2 megabytes
 ;the present bit an read/write bit is set on all entires
@@ -117,6 +103,19 @@ pagingLoop:                ;
     add ebx, 0x1000        ;update ebx to point to next memory location
     add edi, 8             ;update edi to next PT entry
     loop pagingLoop        ;
+
+;generate memory map for the kernel to use
+mov edx, 0x534D4150   ;smap code
+mov di, 0x500         ;base address for memory map
+mov ebx, 0            ;continuation value, starts 0
+memoryMapLoop:        ;
+    mov eax, 0xE820   ;memory map bios function
+    mov ecx, 24       ;buffer size
+    int 0x15          ;call memory map interupt
+    jc error.mm       ;
+    add di, 24        ;iterate di
+    cmp ebx, 0        ;check if finished
+    jne memoryMapLoop ;
 
 ;load gdt
 lgdt [gdt.descriptor]
