@@ -73,16 +73,23 @@ jz error.long_mode  ;
 ;loads rest of the bootloader and the kernel
 ;capped at 255 sectors
 mov dl, [BOOT_DISK]     ;disk
-mov dh, 0xFF            ;max sectors
+mov ah, 0xFF            ;sector count
+xor dh, dh              ;head
+xor ch, ch              ;cylinder
+mov cl, 2               ;sector, starts at 1
+mov bx, 0x7E00          ;base address
 loadLoop:               ;
-    mov al, dh          ;move sectors into al
-    cmp al, 1           ;error if sectors = 1
+    cmp ah, 1           ;error if sectors = 1
     je error.disk_read  ;
-    call read_disk      ;try to load sectors into memory
-    dec dh              ;decrement sector count
+    mov al, ah          ;move sectors into al
+    push ax             ;save sector count
+    mov ah, 2           ;interupt code
+    int 0x13            ;call bios interupt
+    pop ax              ;return sector count
+    dec ah              ;decrement sector count
     jc loadLoop         ;check no error was returned
     dec al              ;decrement al so the comparison works
-    cmp al, dh          ;check sectors read = sectors requested
+    cmp al, ah          ;check sectors read = sectors requested
     jne loadLoop        ;
 
 ;setup identity paging for the first 2 megabytes
@@ -150,28 +157,6 @@ print_16:
     .exit:           ;
         popa         ;
         ret          ;
-
-;params:
-;   dl = disk
-;   al = sectors
-;returns:
-;   carry flag set on error
-;   ah = status
-;   al = sectors_read
-read_disk:
-    push bx             ;
-    push cx             ;
-    push dx             ;
-    mov ah, 2           ;interupt code
-    mov dh, 0           ;head
-    mov ch, 0           ;cylinder
-    mov cl, 2           ;sector, starts at 1
-    mov bx, 0x7E00      ;base address
-    int 0x13            ;call bios interupt
-    pop dx              ;
-    pop cx              ;
-    pop bx              ;
-    ret                 ;
 
 ;error handling, prints error messages then hangs
 error:
