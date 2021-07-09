@@ -3,5 +3,8 @@ build
 kernel/obj
 kernel/dep
 
+#documentaion is part of releases not commits
+docs
+
 #misc
 .vscode

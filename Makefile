@@ -7,6 +7,9 @@ OS_NAME := JankOs
 BOOT_DIR := bootloader
 BUILD_DIR := build
 KERNEL_DIR := kernel
+DOCS_DIR := docs
+LATEX_DIR := $(DOCS_DIR)/latex
+HTML_DIR := $(DOCS_DIR)/html
 KERNEL_SRC_DIR := $(KERNEL_DIR)/src
 KERNEL_INC_DIR := $(KERNEL_DIR)/inc
 KERNEL_OBJ_DIR := $(KERNEL_DIR)/obj
@@ -53,9 +56,14 @@ clean:
 	rm -f $(BUILD_DIR)/*
 	rm -f $(KERNEL_OBJ_DIR)/*
 	rm -f $(KERNEL_DEP_DIR)/*
+	rm -rf $(DOCS_DIR)/*
 
 qemu: all
 	qemu-system-x86_64 $(QEMU_FLAGS)
+
+doxygen: all | $(DOCS_DIR)
+	doxygen Doxyfile 1>/dev/null
+	$(MAKE) -C $(LATEX_DIR) 1>/dev/null
 
 #tell make which headers are needed for which source files
 #make will use the dependency file rule if it needs to
@@ -82,5 +90,5 @@ $(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
 $(OS_BIN): $(BOOT_BIN) $(KERNEL_BIN) | $(BUILD_DIR)
 	cat $^ > $@
 
-$(BUILD_DIR) $(KERNEL_OBJ_DIR) $(KERNEL_DEP_DIR):
+$(BUILD_DIR) $(KERNEL_OBJ_DIR) $(KERNEL_DEP_DIR) $(DOCS_DIR):
 	mkdir $@
