@@ -1,15 +1,11 @@
 #removes built in rules and variables
 MAKEFLAGS += -r -R
 
-OS_NAME := JankOs
-
 #diretories
 BOOT_DIR := bootloader
 BUILD_DIR := build
 KERNEL_DIR := kernel
 DOCS_DIR := docs
-LATEX_DIR := $(DOCS_DIR)/latex
-HTML_DIR := $(DOCS_DIR)/html
 KERNEL_SRC_DIR := $(KERNEL_DIR)/src
 KERNEL_INC_DIR := $(KERNEL_DIR)/inc
 KERNEL_OBJ_DIR := $(KERNEL_DIR)/obj
@@ -24,17 +20,15 @@ KERNEL_ENTRY_OBJ := $(KERNEL_OBJ_DIR)/kernel_entry.o
 KERNEL_SRCS := $(wildcard $(KERNEL_SRC_DIR)/*.c)
 KERNEL_OBJS := $(subst src,obj,$(subst .c,.o,$(KERNEL_SRCS)))
 KERNEL_DEPS := $(subst src,dep,$(subst .c,.d,$(KERNEL_SRCS)))
-LINKER_SCRIPT := link.ld
-LIB_GCC := /usr/local/cross/lib/gcc/x86_64-elf/11.1.0/libgcc.a
 KERNEL_BIN := $(BUILD_DIR)/kernel.bin
-OS_BIN := $(BUILD_DIR)/$(OS_NAME).bin
+OS_BIN := $(BUILD_DIR)/JankOs.bin
 
 #command options
 CC := x86_64-elf-gcc
 LD := x86_64-elf-ld
 NASM_FLAGS := 
 QEMU_FLAGS := -drive file=$(OS_BIN),format=raw
-LD_FLAGS := -nostdlib -T$(LINKER_SCRIPT) -L -l:libgcc.a
+LD_FLAGS := -nostdlib -Tlink.ld -L -l:libgcc.a
 CC_FLAGS := -std=gnu18 -ffreestanding -mno-red-zone -I$(KERNEL_INC_DIR) -c
 
 #build with optimisation or debugging
@@ -49,7 +43,7 @@ else
 	CC_FLAGS += -O2
 endif
 
-.PHONY: all clean qemu
+.PHONY: all clean qemu doxygen
 
 all: $(OS_BIN)
 
@@ -64,7 +58,7 @@ qemu: all
 
 doxygen: all | $(DOCS_DIR)
 	doxygen Doxyfile 1>/dev/null
-	$(MAKE) -C $(LATEX_DIR) 1>/dev/null 2>/dev/null
+	$(MAKE) -C $(DOCS_DIR)/latex 1>/dev/null 2>/dev/null
 
 #tell make which headers are needed for which source files
 #make will use the dependency file rule if it needs to
