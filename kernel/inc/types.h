@@ -7,8 +7,7 @@
  *          sizes should be consistent, unlike regular compilation.
  */
 
-#ifndef TYPES_H
-#define TYPES_H
+#pragma once
 
 #define bool _Bool ///< boolean
 #define true 1 ///< true
@@ -26,5 +25,3 @@
 
 #define f32 float ///< 32 bit float
 #define f64 double ///< 64 bit float
-
-#endif

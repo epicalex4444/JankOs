@@ -3,8 +3,7 @@
  * @brief vga function definitions and macros
  */
 
-#ifndef VGA_H
-#define VGA_H
+#pragma once
 
 #include "types.h"
 
@@ -48,5 +47,3 @@ XY cursor_pos_to_xy(u16 pos);
 u16 xy_to_cursor_pos(XY xy);
 void write_char(u8 c, u8 front_colour, u8 back_colour, u16* adr);
 void clear_screen(void);
-
-#endif

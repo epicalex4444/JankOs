@@ -3,8 +3,7 @@
  * @brief io function definitions
  */
 
-#ifndef IO_H
-#define IO_H
+#pragma once
 
 #include "types.h"
 
@@ -14,5 +13,3 @@ void outl(u16 port, u32 val);
 u8 inb(u16 port);
 u16 inw(u16 port);
 u32 inl(u16 port);
-
-#endif
