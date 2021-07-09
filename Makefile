@@ -25,6 +25,7 @@ KERNEL_SRCS := $(wildcard $(KERNEL_SRC_DIR)/*.c)
 KERNEL_OBJS := $(subst src,obj,$(subst .c,.o,$(KERNEL_SRCS)))
 KERNEL_DEPS := $(subst src,dep,$(subst .c,.d,$(KERNEL_SRCS)))
 LINKER_SCRIPT := link.ld
+LIB_GCC := /usr/local/cross/lib/gcc/x86_64-elf/11.1.0/libgcc.a
 KERNEL_BIN := $(BUILD_DIR)/kernel.bin
 OS_BIN := $(BUILD_DIR)/$(OS_NAME).bin
 
@@ -63,7 +64,7 @@ qemu: all
 
 doxygen: all | $(DOCS_DIR)
 	doxygen Doxyfile 1>/dev/null
-	$(MAKE) -C $(LATEX_DIR) 1>/dev/null
+	$(MAKE) -C $(LATEX_DIR) 1>/dev/null 2>/dev/null
 
 #tell make which headers are needed for which source files
 #make will use the dependency file rule if it needs to
@@ -85,7 +86,7 @@ $(KERNEL_DEP_DIR)/%.d: $(KERNEL_SRC_DIR)/%.c | $(KERNEL_DEP_DIR)
 
 #linker respects order of files provided, KERNEL_ENTRY_OBJ has to be the first
 $(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
-	$(LD) $(LD_FLAGS) $^ -o $@
+	$(LD) $(LD_FLAGS) -l$(LIB_GCC) $^ -o $@
 
 $(OS_BIN): $(BOOT_BIN) $(KERNEL_BIN) | $(BUILD_DIR)
 	cat $^ > $@
