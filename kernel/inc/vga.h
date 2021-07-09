@@ -1,32 +1,43 @@
+/**
+ * @file vga.h
+ * @brief vga function definitions and macros
+ */
+
 #ifndef VGA_H
 #define VGA_H
 
 #include "types.h"
 
-#define VGA_BASE (u16*)0xB8000
-#define VGA_LIMIT (u16*)0xBFD00
-#define VGA_WIDTH 80
+#define VGA_BASE (u16*)0xB8000 ///< base address of text mode vga memory
+#define VGA_LIMIT (u16*)0xBFD00 ///< highest address of text mode vga memory
+#define VGA_WIDTH 80 ///< width of text mode vga memory
 
-#define BLACK      0
-#define BLUE       1
-#define GREEN      2
-#define CYAN       3
-#define RED        4
-#define MAGENTA    5
-#define BROWN      6
-#define LIGHTGRAY  7
-#define DARKGRAY   8
-#define LIGHTBLUE  9
-#define LIGHTGREEN 10
-#define LIGHTCYAN  11
-#define LIGHTRED   12
-#define PINK       13
-#define YELLOW     14
-#define WHITE      15
+/// text mode vga colours
+typedef enum {
+    BLACK,
+    BLUE,
+    GREEN,
+    CYAN,
+    RED,
+    MAGENTA,
+    BROWN,
+    LIGHTGRAY,
+    DARKGRAY,
+    LIGHTBLUE,
+    LIGHTGREEN,
+    LIGHTCYAN,
+    LIGHTRED,
+    PINK,
+    YELLOW,
+    WHITE
+} Colours;
 
+/**
+ * @brief contains cursor x and y position
+ */
 typedef struct {
-    u8 x;
-    u8 y;
+    u8 x; ///< x position
+    u8 y; ///< y position
 } XY;
 
 void show_cursor(u8 scanline_start, u8 scanline_end);
