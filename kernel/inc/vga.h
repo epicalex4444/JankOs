@@ -31,9 +31,7 @@ typedef enum {
     WHITE
 } Colours;
 
-/**
- * @brief contains cursor x and y position
- */
+/// contains cursor x and y position
 typedef struct {
     u8 x; ///< x position
     u8 y; ///< y position

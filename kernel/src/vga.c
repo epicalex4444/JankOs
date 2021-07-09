@@ -19,9 +19,7 @@ void show_cursor(u8 scanline_start, u8 scanline_end) {
     outb(0x3D5, (inb(0x3D5) & 0xE0) | scanline_end);
 }
 
-/**
- * @brief makes the cursor invisible
- */
+/// makes the cursor invisible
 void hide_cursor(void) {
     outb(0x3D4, 0x0A);
     outb(0x3D5, 0x20);
@@ -85,9 +83,7 @@ void write_char(u8 c, u8 front_colour, u8 back_colour, u16* adr) {
     *adr = ((u16)front_colour << 8) + ((u16)back_colour << 4) + (u16)c;
 }
 
-/**
- * @brief writes black background, white text, null char into every video memory entry
- */
+/// writes black background, white text, null char into every video memory entry
 void clear_screen(void) {
     u64* adr = (u64*)VGA_BASE;
     u64 val = 0x0F200F200F200F20;
