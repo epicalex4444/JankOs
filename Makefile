@@ -34,7 +34,7 @@ CC := x86_64-elf-gcc
 LD := x86_64-elf-ld
 NASM_FLAGS := 
 QEMU_FLAGS := -drive file=$(OS_BIN),format=raw
-LD_FLAGS := -nostdlib -T$(LINKER_SCRIPT)
+LD_FLAGS := -nostdlib -T$(LINKER_SCRIPT) -L -l:libgcc.a
 CC_FLAGS := -std=gnu18 -ffreestanding -mno-red-zone -I$(KERNEL_INC_DIR) -c
 
 #build with optimisation or debugging
@@ -86,7 +86,7 @@ $(KERNEL_DEP_DIR)/%.d: $(KERNEL_SRC_DIR)/%.c | $(KERNEL_DEP_DIR)
 
 #linker respects order of files provided, KERNEL_ENTRY_OBJ has to be the first
 $(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
-	$(LD) $(LD_FLAGS) -l$(LIB_GCC) $^ -o $@
+	$(LD) $(LD_FLAGS) $^ -o $@
 
 $(OS_BIN): $(BOOT_BIN) $(KERNEL_BIN) | $(BUILD_DIR)
 	cat $^ > $@
