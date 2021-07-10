@@ -28,7 +28,7 @@ CC := x86_64-elf-gcc
 LD := x86_64-elf-ld
 NASM_FLAGS := 
 QEMU_FLAGS := -drive file=$(OS_BIN),format=raw
-LD_FLAGS := -nostdlib -Tlink.ld -L -l:libgcc.a
+LD_FLAGS := -nostdlib -Tlink.ld -L$(BUILD_DIR) -lgcc
 CC_FLAGS := -std=gnu18 -ffreestanding -mno-red-zone -nostdinc -I$(KERNEL_INC_DIR) -c
 
 #build with optimisation or debugging
@@ -48,7 +48,7 @@ endif
 all: $(OS_BIN)
 
 clean:
-	rm -f $(BUILD_DIR)/*
+	rm -f $(BUILD_DIR)/*.bin
 	rm -f $(KERNEL_OBJ_DIR)/*
 	rm -f $(KERNEL_DEP_DIR)/*
 	rm -rf $(DOCS_DIR)/*
@@ -82,8 +82,8 @@ $(KERNEL_DEP_DIR)/%.d: $(KERNEL_SRC_DIR)/%.c | $(KERNEL_DEP_DIR)
 $(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
 	$(LD) $(LD_FLAGS) $^ -o $@
 
-$(OS_BIN): $(BOOT_BIN) $(KERNEL_BIN) | $(BUILD_DIR)
+$(OS_BIN): $(BOOT_BIN) $(KERNEL_BIN)
 	cat $^ > $@
 
-$(BUILD_DIR) $(KERNEL_OBJ_DIR) $(KERNEL_DEP_DIR) $(DOCS_DIR):
+$(KERNEL_OBJ_DIR) $(KERNEL_DEP_DIR) $(DOCS_DIR):
 	mkdir $@

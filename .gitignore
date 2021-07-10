@@ -1,5 +1,5 @@
 #building files
-build
+build/*.bin
 kernel/obj
 kernel/dep
 
