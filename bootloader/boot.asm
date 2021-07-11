@@ -164,10 +164,26 @@ gdt:
 ;pad 0's until partition table
 times 446 - ($-$$) db 0
 
-times 16 db 0 ;p1
-times 16 db 0 ;p2
-times 16 db 0 ;p3
-times 16 db 0 ;p4
+;partition 1 entry
+;bootable/active bit set
+;start chs 0/0/2
+;id 19(unused)
+;end chs 0/32/32
+;starting sector 1
+;partition size 2047
+db 0x80       ;bootable/active
+db 0x00       ;start head
+db 0x02       ;start cylinder bits 0-1, sector
+db 0x00       ;start cylinder bits 2-9
+db 0x19       ;id
+db 0x20       ;end head
+db 0x20       ;end cylinder bits 0-1
+db 0x00       ;end cylinder bits 2-9
+dd 0x00000001 ;start sector
+dd 0x000007ff ;amount of sectors 2047
+
+;partition 2-4 entries
+times 48 db 0
 
 ;boot signature
 dw 0xAA55
