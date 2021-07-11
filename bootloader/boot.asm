@@ -92,6 +92,88 @@ loadLoop:               ;
     cmp al, dh          ;check sectors read = sectors requested
     jne loadLoop        ;
 
+;jump to next bootsector for space
+jmp stage2
+
+;params: bx = address of null terminated string
+;returns: none
+print_16:
+    pusha            ;
+    mov ah, 0xE      ;display char function
+    .loop:           ;
+        mov al, [bx] ;load char into al
+        test al, al  ;test if al is 0
+        jz .exit     ;if 0 exit
+        int 0x10     ;call bios display char interupt
+        inc bx       ;point to next char
+        jmp .loop    ;
+    .exit:           ;
+        popa         ;
+        ret          ;
+
+;error handling, prints error messages then hangs
+error:
+    .disk_read:
+        mov bx, DISK_READ_ERROR
+        jmp .end
+    .cpuid:
+        mov bx, CPUID_ERROR
+        jmp .end
+    .ext_funcs:
+        mov bx, EXT_FUNCS_ERROR
+        jmp .end
+    .long_mode:
+        mov bx, LONG_MODE_ERROR
+        jmp .end
+    .mm:
+        mov bx, MM_ERROR
+    .end:
+        call print_16
+        jmp $
+
+;strings
+DISK_READ_ERROR: db 'Disk Read Error', 0
+CPUID_ERROR:     db 'CPUID Not Supported', 0
+EXT_FUNCS_ERROR: db 'Extended Functions Not Supported', 0
+LONG_MODE_ERROR: db 'Long Mode Not Supported', 0
+MM_ERROR:        db 'Memory Map Error', 0
+
+BOOT_DISK: db 0x00
+
+gdt:
+.null equ $ - gdt  ;
+    dq 0           ;mandatory null segment
+.code equ $ - gdt  ;
+    dw 0xFFFF      ;limit 0-15
+    dw 0x0000      ;base 0-15
+    db 0x00        ;base 16-23
+    db 10011010b   ;present, privelege 2 bits, type, code, conforming, readable, accesed
+    db 10101111b   ;granularity, 16/32, 64, avl, limit 16-19
+    db 0x00        ;base 24-31
+.data equ $ - gdt  ;
+    dw 0xFFFF      ;limit 0-15
+    dw 0x0000      ;base 0-15
+    db 0x00        ;base 16-23
+    db 10010010b   ;present, privelege 2 bits, type, code, conforming, readable, accesed
+    db 10101111b   ;granularity, 16/32, 64, avl, limit 16-19
+    db 0x00        ;base 24-31
+.descriptor:       ;
+    dw $ - gdt - 1 ;size
+    dq gdt         ;base address
+
+;pad 0's until partition table
+times 446 - ($-$$) db 0
+
+times 16 db 0 ;p1
+times 16 db 0 ;p2
+times 16 db 0 ;p3
+times 16 db 0 ;p4
+
+;boot signature
+dw 0xAA55
+
+stage2:
+
 ;setup identity paging for the first 2 megabytes
 ;the present bit an read/write bit is set on all entires
 mov edi, 0x1000            ;PML4 start address
@@ -141,75 +223,6 @@ mov cr0, ebx        ;
 ;flush instruction cache
 ;so we don't execute 16 bit code in long mode
 jmp gdt.code:longMode
-
-;params: bx = address of null terminated string
-;returns: none
-print_16:
-    pusha            ;
-    mov ah, 0xE      ;display char function
-    .loop:           ;
-        mov al, [bx] ;load char into al
-        test al, al  ;test if al is 0
-        jz .exit     ;if 0 exit
-        int 0x10     ;call bios display char interupt
-        inc bx       ;point to next char
-        jmp .loop    ;
-    .exit:           ;
-        popa         ;
-        ret          ;
-
-;error handling, prints error messages then hangs
-error:
-    .disk_read:
-        mov bx, DISK_READ_ERROR
-        jmp .end
-    .cpuid:
-        mov bx, CPUID_ERROR
-        jmp .end
-    .ext_funcs:
-        mov bx, EXT_FUNCS_ERROR
-        jmp .end
-    .long_mode:
-        mov bx, LONG_MODE_ERROR
-        jmp .end
-    .mm:
-        mov bx, MM_ERROR
-    .end:
-        call print_16
-        jmp $
-
-;strings
-DISK_READ_ERROR: db 'Disk Read Error', 0
-CPUID_ERROR:     db 'CPUID Not Supported', 0
-EXT_FUNCS_ERROR: db 'Extended Functions Not Supported', 0
-LONG_MODE_ERROR: db 'Long Mode Not Supported', 0
-MM_ERROR:        db 'Memory Map Error', 0
-
-BOOT_DISK: db 0x00
-
-times 510 - ($ - $$) db 0 ;pad boot sector
-dw 0xAA55 ;add boot signature
-
-gdt:
-.null equ $ - gdt  ;
-    dq 0           ;mandatory null segment
-.code equ $ - gdt  ;
-    dw 0xFFFF      ;limit 0-15
-    dw 0x0000      ;base 0-15
-    db 0x00        ;base 16-23
-    db 10011010b   ;present, privelege 2 bits, type, code, conforming, readable, accesed
-    db 10101111b   ;granularity, 16/32, 64, avl, limit 16-19
-    db 0x00        ;base 24-31
-.data equ $ - gdt  ;
-    dw 0xFFFF      ;limit 0-15
-    dw 0x0000      ;base 0-15
-    db 0x00        ;base 16-23
-    db 10010010b   ;present, privelege 2 bits, type, code, conforming, readable, accesed
-    db 10101111b   ;granularity, 16/32, 64, avl, limit 16-19
-    db 0x00        ;base 24-31
-.descriptor:       ;
-    dw $ - gdt - 1 ;size
-    dq gdt         ;base address
 
 [bits 64]
 longMode:
