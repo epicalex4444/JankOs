@@ -22,13 +22,13 @@ KERNEL_OBJS := $(subst src,obj,$(subst .c,.o,$(KERNEL_SRCS)))
 KERNEL_DEPS := $(subst src,dep,$(subst .c,.d,$(KERNEL_SRCS)))
 KERNEL_BIN := $(BUILD_DIR)/kernel.bin
 OS_BIN := $(BUILD_DIR)/JankOs.bin
-OS_IMG := $(BUILD_DIR)/JankOs.img
+OS_ISO := $(BUILD_DIR)/JankOs.iso
 
 #command options
 CC := x86_64-elf-gcc
 LD := x86_64-elf-ld
 NASM_FLAGS := 
-QEMU_FLAGS := -drive file=$(OS_IMG),format=raw
+QEMU_FLAGS := -drive file=$(OS_ISO),format=raw
 LD_FLAGS := -nostdlib -Tlink.ld -L$(BUILD_DIR) -lgcc
 CC_FLAGS := -std=gnu18 -ffreestanding -mno-red-zone -nostdinc -I$(KERNEL_INC_DIR) -c
 
@@ -46,10 +46,10 @@ endif
 
 .PHONY: all clean qemu doxygen
 
-all: $(OS_IMG)
+all: $(OS_ISO)
 
 clean:
-	rm -f $(OS_IMG)
+	rm -f $(OS_ISO)
 	rm -f $(BUILD_DIR)/*.bin
 	rm -f $(KERNEL_OBJ_DIR)/*
 	rm -f $(KERNEL_DEP_DIR)/*
@@ -87,7 +87,7 @@ $(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
 $(OS_BIN): $(BOOT_BIN) $(KERNEL_BIN)
 	cat $^ > $@
 
-$(OS_IMG): $(OS_BIN)
+$(OS_ISO): $(OS_BIN)
 	fallocate -l 1M $@
 	dd if=$< of=$@ conv=notrunc
 
