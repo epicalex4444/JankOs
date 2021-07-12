@@ -1,0 +1,28 @@
+Commands Line Applications:
+    git                - to clone the repo or to contribute
+    make               - compilation
+    mkdir              - compilation
+    nasm               - compilation
+    x86_64-elf-gcc     - compilation
+    x86_64-elf-ld      - compilation
+    cat                - compilation
+    echo               - compilation
+    fdisk              - compilation
+    rm                 - make clean
+    qemu-system-x86_64 - make qemu
+    doxygen            - make doxygen
+    pdflatex           - make doxygen
+    dd                 - suggested usb writing tool
+
+Host Os:
+    any linux distro with gnu tools
+    windows with wsl
+    macOs with homebrew?
+    freebsd?
+
+Guest Os:
+    x86_64 cpu
+    mbr(legacy) boot
+    vga
+    long mode(64 bits)
+    other bios features that have been well supported on for an eternity
