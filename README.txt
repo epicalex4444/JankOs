@@ -7,6 +7,11 @@ Current features:
     basic vga driver
     print_string function
 
+Documentation:
+    Documentation is provided with every release.
+    You can also generate documentation yourself with make doxygen.
+    You need doxygen and pdflatex to do that.
+
 Build from source:
     Firstly you need to be running linux or if you are in windows you can use wsl.
     2nd you need to clone the repo - git clone https://github.com/epicalex4444/JankOs.
