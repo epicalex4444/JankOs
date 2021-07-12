@@ -6,9 +6,11 @@
 #pragma once
 
 #include "types.h"
+#include "vga.h"
 
 #define POS_MAX 1999 ///< last posible position to write to
 #define NEXT_POS(pos) ((pos) == POS_MAX ? 0 : (pos) + 1) ///< gets the next position to write to
+#define NEWLINE(pos) (pos / VGA_WIDTH * VGA_WIDTH + VGA_WIDTH) ///< returns start of next line position
 
 void print_string(i8* str);
 

@@ -4,7 +4,6 @@
  */
 
 #include "print.h"
-#include "vga.h"
 #include "string.h"
 
 /**
@@ -18,6 +17,11 @@ void print_string(i8* str) {
     u16 pos = get_cursor_pos();
 
     while (*str != 0) {
+        if (*str == '\n') {
+            pos = NEWLINE(pos);
+            ++str;
+            continue;
+        }
         write_char(*str, WHITE, BLACK, pos);
         ++str;
         pos = NEXT_POS(pos);
