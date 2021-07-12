@@ -21,7 +21,6 @@ KERNEL_SRCS := $(wildcard $(KERNEL_SRC_DIR)/*.c)
 KERNEL_OBJS := $(subst src,obj,$(subst .c,.o,$(KERNEL_SRCS)))
 KERNEL_DEPS := $(subst src,dep,$(subst .c,.d,$(KERNEL_SRCS)))
 KERNEL_BIN := $(BUILD_DIR)/kernel.bin
-OS_BIN := $(BUILD_DIR)/JankOs.bin
 OS_ISO := $(BUILD_DIR)/JankOs.iso
 
 #command options
@@ -84,12 +83,12 @@ $(KERNEL_DEP_DIR)/%.d: $(KERNEL_SRC_DIR)/%.c | $(KERNEL_DEP_DIR)
 $(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
 	$(LD) $(LD_FLAGS) $^ -o $@
 
-$(OS_BIN): $(BOOT_BIN) $(KERNEL_BIN)
+#combines bootloader and kernel
+#then dynamically partitions
+#adds partition id=0x19, sector 1-end, bootable
+$(OS_ISO): $(BOOT_BIN) $(KERNEL_BIN)
 	cat $^ > $@
-
-$(OS_ISO): $(OS_BIN)
-	fallocate -l 1M $@
-	dd if=$< of=$@ conv=notrunc
+	(echo n; echo p; echo ""; echo ""; echo ""; echo t; echo 19; echo a; echo w) | fdisk $@
 
 $(KERNEL_OBJ_DIR) $(KERNEL_DEP_DIR) $(DOCS_DIR):
 	mkdir $@
