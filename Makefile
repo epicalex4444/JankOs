@@ -57,7 +57,7 @@ clean:
 qemu: all
 	qemu-system-x86_64 $(QEMU_FLAGS)
 
-doxygen: all | $(DOCS_DIR)
+doxygen: | $(DOCS_DIR)
 	doxygen Doxyfile 1>/dev/null
 	$(MAKE) -C $(DOCS_DIR)/latex 1>/dev/null 2>/dev/null
 
