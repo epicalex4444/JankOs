@@ -10,13 +10,8 @@
 #define POS_MAX 1999
 
 void print_string(i8* str);
-void print_u8_hex(u8 num);
-void print_u16_hex(u16 num);
-void print_u32_hex(u32 num);
-void print_u64_hex(u64 num);
-void print_i8_hex(i8 num);
-void print_i16_hex(i16 num);
-void print_i32_hex(i32 num);
-void print_i64_hex(i64 num);
-void print_f32_hex(f32 num);
-void print_f64_hex(f64 num);
+void print_hex(void* num, u8 size);
+void print_hex_8(u8 num, u16 pos);
+void print_hex_16(u16 num, u16 pos);
+void print_hex_32(u32 num, u16 pos);
+void print_hex_64(u64 num, u16 pos);

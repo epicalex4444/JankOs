@@ -31,17 +31,42 @@ void print_string(i8* str) {
 }
 
 /**
- * @brief prints u8 in hex
- * @param num number that is getting printed
+ * @brief prints out hex of a data type
+ * @param num void* to print out as hex
+ * @param size how many bits the data type is
  * @details Starts at cursor position.
  *          Cursor is updated to be after the last char,
  *          wraps around to start if it gets to the end.
  */
-void print_u8_hex(u8 num) {
+void print_hex(void* num, u8 size) {
     u16 pos = get_cursor_pos();
     write_char('0', WHITE, BLACK, pos++);
     write_char('x', WHITE, BLACK, pos++);
 
+    switch (size) {
+        case 8:
+            print_hex_8(*((u8*)num), pos);
+            break;
+        case 16:
+            print_hex_16(*((u16*)num), pos);
+            break;
+        case 32:
+            print_hex_32(*((u32*)num), pos);
+            break;
+        case 64:
+            print_hex_64(*((u64*)num), pos);
+            break;
+    }
+}
+
+/**
+ * @brief prints out u8 as hex
+ * @param num value to print a hex
+ * @param pos position to start printing from
+ * @details Cursor is updated to be after the last char,
+ *          wraps around to start if it gets to the end.
+ */
+void print_hex_8(u8 num, u16 pos) {
     u8 mask = 0xF0;
     u8 shift = 4;
     while (mask != 0) {
@@ -54,22 +79,17 @@ void print_u8_hex(u8 num) {
             ++pos;
         }
     }
-
     set_cursor_pos(pos);
 }
 
 /**
- * @brief prints u16 in hex
- * @param num number that is getting printed
- * @details Starts at cursor position.
- *          Cursor is updated to be after the last char,
+ * @brief prints out u16 as hex
+ * @param num value to print a hex
+ * @param pos position to start printing from
+ * @details Cursor is updated to be after the last char,
  *          wraps around to start if it gets to the end.
  */
-void print_u16_hex(u16 num) {
-    u16 pos = get_cursor_pos();
-    write_char('0', WHITE, BLACK, pos++);
-    write_char('x', WHITE, BLACK, pos++);
-
+void print_hex_16(u16 num, u16 pos) {
     u16 mask = 0xF000;
     u8 shift = 12;
     while (mask != 0) {
@@ -82,22 +102,17 @@ void print_u16_hex(u16 num) {
             ++pos;
         }
     }
-
     set_cursor_pos(pos);
 }
 
 /**
- * @brief prints u32 in hex
- * @param num number that is getting printed
- * @details Starts at cursor position.
- *          Cursor is updated to be after the last char,
+ * @brief prints out u32 as hex
+ * @param num value to print a hex
+ * @param pos position to start printing from
+ * @details Cursor is updated to be after the last char,
  *          wraps around to start if it gets to the end.
  */
-void print_u32_hex(u32 num) {
-    u16 pos = get_cursor_pos();
-    write_char('0', WHITE, BLACK, pos++);
-    write_char('x', WHITE, BLACK, pos++);
-
+void print_hex_32(u32 num, u16 pos) {
     u32 mask = 0xF0000000;
     u8 shift = 28;
     while (mask != 0) {
@@ -110,22 +125,17 @@ void print_u32_hex(u32 num) {
             ++pos;
         }
     }
-
     set_cursor_pos(pos);
 }
 
 /**
- * @brief prints u64 in hex
- * @param num number that is getting printed
- * @details Starts at cursor position.
- *          Cursor is updated to be after the last char,
+ * @brief prints out u64 as hex
+ * @param num value to print a hex
+ * @param pos position to start printing from
+ * @details Cursor is updated to be after the last char,
  *          wraps around to start if it gets to the end.
  */
-void print_u64_hex(u64 num) {
-    u16 pos = get_cursor_pos();
-    write_char('0', WHITE, BLACK, pos++);
-    write_char('x', WHITE, BLACK, pos++);
-
+void print_hex_64(u64 num, u16 pos) {
     u64 mask = 0xF000000000000000;
     u8 shift = 60;
     while (mask != 0) {
@@ -138,178 +148,5 @@ void print_u64_hex(u64 num) {
             ++pos;
         }
     }
-
-    set_cursor_pos(pos);
-}
-
-/**
- * @brief prints i8 in hex
- * @param num number that is getting printed
- * @details Starts at cursor position.
- *          Cursor is updated to be after the last char,
- *          wraps around to start if it gets to the end.
- */
-void print_i8_hex(i8 num) {
-    u16 pos = get_cursor_pos();
-    write_char('0', WHITE, BLACK, pos++);
-    write_char('x', WHITE, BLACK, pos++);
-
-    u8 mask = 0xF0;
-    u8 shift = 4;
-    while (mask != 0) {
-        write_char(NUM_TO_HEX((mask & num) >> shift), WHITE, BLACK, pos);
-        shift -= 4;
-        mask >>= 4;
-        if (pos == POS_MAX) {
-            pos = 0;
-        } else {
-            ++pos;
-        }
-    }
-
-    set_cursor_pos(pos);
-}
-
-/**
- * @brief prints i16 in hex
- * @param num number that is getting printed
- * @details Starts at cursor position.
- *          Cursor is updated to be after the last char,
- *          wraps around to start if it gets to the end.
- */
-void print_i16_hex(i16 num) {
-    u16 pos = get_cursor_pos();
-    write_char('0', WHITE, BLACK, pos++);
-    write_char('x', WHITE, BLACK, pos++);
-
-    u16 mask = 0xF000;
-    u8 shift = 12;
-    while (mask != 0) {
-        write_char(NUM_TO_HEX((mask & num) >> shift), WHITE, BLACK, pos);
-        shift -= 4;
-        mask >>= 4;
-        if (pos == POS_MAX) {
-            pos = 0;
-        } else {
-            ++pos;
-        }
-    }
-
-    set_cursor_pos(pos);
-}
-
-/**
- * @brief prints i32 in hex
- * @param num number that is getting printed
- * @details Starts at cursor position.
- *          Cursor is updated to be after the last char,
- *          wraps around to start if it gets to the end.
- */
-void print_i32_hex(i32 num) {
-    u16 pos = get_cursor_pos();
-    write_char('0', WHITE, BLACK, pos++);
-    write_char('x', WHITE, BLACK, pos++);
-
-    u32 mask = 0xF0000000;
-    u8 shift = 28;
-    while (mask != 0) {
-        write_char(NUM_TO_HEX((mask & num) >> shift), WHITE, BLACK, pos);
-        shift -= 4;
-        mask >>= 4;
-        if (pos == POS_MAX) {
-            pos = 0;
-        } else {
-            ++pos;
-        }
-    }
-
-    set_cursor_pos(pos);
-}
-
-/**
- * @brief prints i64 in hex
- * @param num number that is getting printed
- * @details Starts at cursor position.
- *          Cursor is updated to be after the last char,
- *          wraps around to start if it gets to the end.
- */
-void print_i64_hex(i64 num) {
-    u16 pos = get_cursor_pos();
-    write_char('0', WHITE, BLACK, pos++);
-    write_char('x', WHITE, BLACK, pos++);
-
-    u64 mask = 0xF000000000000000;
-    u8 shift = 60;
-    while (mask != 0) {
-        write_char(NUM_TO_HEX((mask & num) >> shift), WHITE, BLACK, pos);
-        shift -= 4;
-        mask >>= 4;
-        if (pos == POS_MAX) {
-            pos = 0;
-        } else {
-            ++pos;
-        }
-    }
-
-    set_cursor_pos(pos);
-}
-
-/**
- * @brief prints f32 in hex
- * @param num number that is getting printed
- * @details Starts at cursor position.
- *          Cursor is updated to be after the last char,
- *          wraps around to start if it gets to the end.
- */
-void print_f32_hex(f32 num) {
-    u16 pos = get_cursor_pos();
-    write_char('0', WHITE, BLACK, pos++);
-    write_char('x', WHITE, BLACK, pos++);
-
-    u32 integer = *((u32*)&num);
-
-    u32 mask = 0xF0000000;
-    u8 shift = 28;
-    while (mask != 0) {
-        write_char(NUM_TO_HEX((mask & integer) >> shift), WHITE, BLACK, pos);
-        shift -= 4;
-        mask >>= 4;
-        if (pos == POS_MAX) {
-            pos = 0;
-        } else {
-            ++pos;
-        }
-    }
-
-    set_cursor_pos(pos);
-}
-
-/**
- * @brief prints f64 in hex
- * @param num number that is getting printed
- * @details Starts at cursor position.
- *          Cursor is updated to be after the last char,
- *          wraps around to start if it gets to the end.
- */
-void print_f64_hex(f64 num) {
-    u16 pos = get_cursor_pos();
-    write_char('0', WHITE, BLACK, pos++);
-    write_char('x', WHITE, BLACK, pos++);
-
-    u64 integer = *((u64*)&num);
-
-    u64 mask = 0xF000000000000000;
-    u8 shift = 60;
-    while (mask != 0) {
-        write_char(NUM_TO_HEX((mask & integer) >> shift), WHITE, BLACK, pos);
-        shift -= 4;
-        mask >>= 4;
-        if (pos == POS_MAX) {
-            pos = 0;
-        } else {
-            ++pos;
-        }
-    }
-
     set_cursor_pos(pos);
 }
