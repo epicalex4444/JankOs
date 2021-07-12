@@ -75,12 +75,12 @@ u16 xy_to_cursor_pos(XY xy) {
  * @param c ascii code of a char
  * @param front_colour foreground colour
  * @param back_colour background colour
- * @param adr adress to write the charecter
+ * @param pos y * VGA_WIDTH + x position to write the charecter
  * @details This function can write to arbitrary 
  *          memory and needs to be used carefully.
  */
-void write_char(u8 c, u8 front_colour, u8 back_colour, u16* adr) {
-    *adr = ((u16)front_colour << 8) + ((u16)back_colour << 4) + (u16)c;
+void write_char(u8 c, u8 front_colour, u8 back_colour, u16 pos) {
+    *(VGA_BASE + pos) = ((u16)front_colour << 8) + ((u16)back_colour << 4) + (u16)c;
 }
 
 /// writes black background, white text, null char into every video memory entry
