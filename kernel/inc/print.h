@@ -8,6 +8,7 @@
 #include "types.h"
 
 #define POS_MAX 1999
+#define NEXT_POS(pos) ((pos) == POS_MAX ? 0 : (pos) + 1)
 
 void print_string(i8* str);
 void print_hex(void* num, u8 size);

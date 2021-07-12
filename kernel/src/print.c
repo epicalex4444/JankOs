@@ -20,11 +20,7 @@ void print_string(i8* str) {
     while (*str != 0) {
         write_char(*str, WHITE, BLACK, pos);
         ++str;
-        if (pos == POS_MAX) {
-            pos = 0;
-        } else {
-            ++pos;
-        }
+        pos = NEXT_POS(pos);
     }
 
     set_cursor_pos(pos);
@@ -40,8 +36,10 @@ void print_string(i8* str) {
  */
 void print_hex(void* num, u8 size) {
     u16 pos = get_cursor_pos();
-    write_char('0', WHITE, BLACK, pos++);
-    write_char('x', WHITE, BLACK, pos++);
+    write_char('0', WHITE, BLACK, pos);
+    pos = NEXT_POS(pos);
+    write_char('x', WHITE, BLACK, pos);
+    pos = NEXT_POS(pos);
 
     switch (size) {
         case 8:
@@ -73,11 +71,7 @@ void print_hex_8(u8 num, u16 pos) {
         write_char(NUM_TO_HEX((mask & num) >> shift), WHITE, BLACK, pos);
         shift -= 4;
         mask >>= 4;
-        if (pos == POS_MAX) {
-            pos = 0;
-        } else {
-            ++pos;
-        }
+        pos = NEXT_POS(pos);
     }
     set_cursor_pos(pos);
 }
@@ -96,11 +90,7 @@ void print_hex_16(u16 num, u16 pos) {
         write_char(NUM_TO_HEX((mask & num) >> shift), WHITE, BLACK, pos);
         shift -= 4;
         mask >>= 4;
-        if (pos == POS_MAX) {
-            pos = 0;
-        } else {
-            ++pos;
-        }
+        pos = NEXT_POS(pos);
     }
     set_cursor_pos(pos);
 }
@@ -119,11 +109,7 @@ void print_hex_32(u32 num, u16 pos) {
         write_char(NUM_TO_HEX((mask & num) >> shift), WHITE, BLACK, pos);
         shift -= 4;
         mask >>= 4;
-        if (pos == POS_MAX) {
-            pos = 0;
-        } else {
-            ++pos;
-        }
+        pos = NEXT_POS(pos);
     }
     set_cursor_pos(pos);
 }
@@ -142,11 +128,7 @@ void print_hex_64(u64 num, u16 pos) {
         write_char(NUM_TO_HEX((mask & num) >> shift), WHITE, BLACK, pos);
         shift -= 4;
         mask >>= 4;
-        if (pos == POS_MAX) {
-            pos = 0;
-        } else {
-            ++pos;
-        }
+        pos = NEXT_POS(pos);
     }
     set_cursor_pos(pos);
 }
