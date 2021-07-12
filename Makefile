@@ -88,7 +88,7 @@ $(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
 #adds partition id=0x19, sector 1-end, bootable
 $(OS_ISO): $(BOOT_BIN) $(KERNEL_BIN)
 	cat $^ > $@
-	(echo n; echo p; echo ""; echo ""; echo ""; echo t; echo 19; echo a; echo w) | fdisk $@
+	echo -e "n\np\n\n\n\nt\n19\na\nw\n" | fdisk $@ 1>/dev/null
 
 $(KERNEL_OBJ_DIR) $(KERNEL_DEP_DIR) $(DOCS_DIR):
 	mkdir $@
