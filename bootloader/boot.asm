@@ -192,17 +192,23 @@ pagingLoop:                ;
     loop pagingLoop        ;
 
 ;generate memory map for the kernel to use
-mov edx, 0x534D4150   ;smap code
-mov di, 0x5000        ;base address for memory map
-xor ebx, ebx          ;continuation value, starts at 0
-memoryMapLoop:        ;
-    mov eax, 0xE820   ;memory map bios function
-    mov ecx, 24       ;buffer size
-    int 0x15          ;call memory map interupt
-    jc error.mm       ;
-    add di, 24        ;iterate di
-    test ebx, ebx     ;check if finished
-    jne memoryMapLoop ;
+mov edx, 0x534D4150           ;smap code
+xor ax, ax                    ;set count to 0
+mov [0x5000], ax              ;
+mov di, 0x5004                ;base address for memory map
+xor ebx, ebx                  ;continuation value, starts at 0
+memoryMapLoop:                ;
+    mov eax, 0xE820           ;memory map bios function
+    mov ecx, 24               ;buffer size
+    mov [es:di + 20], dword 1 ;force valid acpi 3.x submission
+    int 0x15                  ;call memory map interupt
+    jc error.mm               ;
+    add di, 24                ;iterate di
+    mov ax, [0x5000]          ;interate count
+    inc ax                    ;
+    mov [0x5000], ax          ;
+    test ebx, ebx             ;check if finished
+    jne memoryMapLoop         ;
 
 ;load gdt
 lgdt [gdt.descriptor]
