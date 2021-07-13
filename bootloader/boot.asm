@@ -195,7 +195,7 @@ pagingLoop:                ;
 mov edx, 0x534D4150           ;smap code
 xor ax, ax                    ;set count to 0
 mov [0x5000], ax              ;
-mov di, 0x5004                ;base address for memory map
+mov di, 0x5002                ;base address for memory map
 xor ebx, ebx                  ;continuation value, starts at 0
 memoryMapLoop:                ;
     mov eax, 0xE820           ;memory map bios function
