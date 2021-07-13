@@ -194,8 +194,8 @@ pagingLoop:                ;
 ;generate memory map for the kernel to use
 mov edx, 0x534D4150           ;smap code
 xor ax, ax                    ;set count to 0
-mov [0x5000], ax              ;
-mov di, 0x5002                ;base address for memory map
+mov [0x500], ax               ;
+mov di, 0x502                 ;base address for memory map
 xor ebx, ebx                  ;continuation value, starts at 0
 memoryMapLoop:                ;
     mov eax, 0xE820           ;memory map bios function
@@ -204,9 +204,9 @@ memoryMapLoop:                ;
     int 0x15                  ;call memory map interupt
     jc error.mm               ;
     add di, 24                ;iterate di
-    mov ax, [0x5000]          ;interate count
+    mov ax, [0x500]           ;interate count
     inc ax                    ;
-    mov [0x5000], ax          ;
+    mov [0x500], ax           ;
     test ebx, ebx             ;check if finished
     jne memoryMapLoop         ;
 
