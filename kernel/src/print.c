@@ -6,6 +6,14 @@
 #include "print.h"
 #include "string.h"
 
+u16 newline(u16 pos) {
+    pos = pos / VGA_WIDTH * VGA_WIDTH + VGA_WIDTH;
+    if (pos >= POS_MAX) {
+        return 0;
+    }
+    return pos;
+}
+
 /**
  * @brief prints a null terminated string
  * @param str null terminated string
@@ -18,7 +26,7 @@ void print_string(i8* str) {
 
     while (*str != 0) {
         if (*str == '\n') {
-            pos = NEWLINE(pos);
+            pos = newline(pos);
             ++str;
             continue;
         }
