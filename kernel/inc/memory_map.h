@@ -1,5 +1,5 @@
 /**
- * @file memory.h
+ * @file memory_map.h
  * @brief memory function definitions
  */
 

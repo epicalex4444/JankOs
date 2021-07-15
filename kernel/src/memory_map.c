@@ -1,5 +1,5 @@
 /**
- * @file memory.c
+ * @file memory_map.c
  * @brief memory function declarations
  */
 
