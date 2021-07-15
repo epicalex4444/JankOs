@@ -7,6 +7,9 @@
 #include "vga.h"
 #include "print.h"
 #include "types.h"
+#include "memory.h"
+
+void panic(void);
 
 /**
  * @brief kernel entry point
@@ -20,9 +23,17 @@ NORETURN void _start(void) {
     clear_screen();
     set_cursor_pos(0);
     show_cursor(14, 15);
-    
-    i8 str[] = "Hello, World!";
-    print_string(str);
 
+    MemoryMap* mM = MM_BASE;
+    if (init_memory_map(mM)) {
+        panic();
+    }
+
+    print_memory_map(mM);
+
+    while (true);
+}
+
+NORETURN void panic(void) {
     while (true);
 }
