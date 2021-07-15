@@ -7,6 +7,11 @@
 #include "print.h"
 #include "vga.h"
 
+/**
+ * @brief parses the memory map and allocates it to a struct
+ * @param mM pointer to memory map location
+ * @return if there was an error
+ */
 bool init_memory_map(MemoryMap* mM) {
     //check more than 1 entry
     if (*E820_COUNT <= 1) {
@@ -103,6 +108,9 @@ bool init_memory_map(MemoryMap* mM) {
     return false;
 }
 
+/**
+ * @brief prints the memory map
+ */
 void print_memory_map(void) {
     i8 str0[] = "Memory Map:\nSize: ";
     i8 str1[] = "\nStart             |Length            |Type      |Acpi      \n";

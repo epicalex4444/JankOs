@@ -6,6 +6,11 @@
 #include "print.h"
 #include "string.h"
 
+/**
+ * @brief updates the pos to be at the start of the next line
+ * @param pos current positon
+ * @return the updated position
+ */
 u16 newline(u16 pos) {
     pos = pos / VGA_WIDTH * VGA_WIDTH + VGA_WIDTH;
     if (pos >= POS_MAX) {
