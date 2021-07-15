@@ -71,7 +71,7 @@ bool init_memory_map(MemoryMap* mM) {
         if ((mM->entries[i].start + mM->entries[i].length == mM->entries[i + 1].start) && (mM->entries[i].type == mM->entries[i + 1].type) && (mM->entries[i].acpi == mM->entries[i + 1].acpi)) {
             mM->entries[i].length += mM->entries[i + 1].length;
             --mM->size;
-            for (u16 j = i + 1; j < mM->size - 1; ++j) {
+            for (u16 j = i + 1; j < mM->size; ++j) {
                 mM->entries[j].start = mM->entries[j + 1].start;
                 mM->entries[j].length = mM->entries[j + 1].length;
                 mM->entries[j].type = mM->entries[j + 1].type;
@@ -83,7 +83,7 @@ bool init_memory_map(MemoryMap* mM) {
         if ((mM->entries[i].start <= 0x100000) && (mM->entries[i].type == FREE)) {
             if (mM->entries[i].start + mM->entries[i].length <= 0x100000) {
                 --mM->size;
-                for (u16 j = i; j < mM->size - 1; ++j) {
+                for (u16 j = i; j < mM->size; ++j) {
                     mM->entries[j].start = mM->entries[j + 1].start;
                     mM->entries[j].length = mM->entries[j + 1].length;
                     mM->entries[j].type = mM->entries[j + 1].type;
