@@ -29,7 +29,7 @@ LD := x86_64-elf-ld
 NASM_FLAGS := 
 QEMU_FLAGS := -drive file=$(OS_ISO),format=raw --enable-kvm
 LD_FLAGS := -nostdlib -Tlink.ld -L$(BUILD_DIR) -lgcc
-CC_FLAGS := -std=gnu18 -ffreestanding -mno-red-zone -nostdinc -I$(KERNEL_INC_DIR) -c
+CC_FLAGS := -std=gnu18 -ffreestanding -mno-red-zone -nostdinc -masm=intel -I$(KERNEL_INC_DIR) -c
 
 #build with optimisation or debugging
 RELEASE := false
