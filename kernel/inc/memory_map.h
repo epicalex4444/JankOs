@@ -37,4 +37,4 @@ typedef struct {
 } MemoryMap;
 
 bool init_memory_map(MemoryMap* mM);
-void print_memory_map(MemoryMap* mM);
+void print_memory_map(void);

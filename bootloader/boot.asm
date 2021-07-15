@@ -129,7 +129,9 @@ error:
         mov bx, MM_ERROR
     .end:
         call print_16
-        jmp $
+    .die:
+        hlt
+        jmp .die
 
 ;strings
 DISK_READ_ERROR: db 'Disk Read Error', 0

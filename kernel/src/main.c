@@ -7,7 +7,7 @@
 #include "vga.h"
 #include "print.h"
 #include "types.h"
-#include "memory.h"
+#include "memory_map.h"
 
 void panic(void);
 
@@ -29,11 +29,14 @@ NORETURN void _start(void) {
         panic();
     }
 
-    print_memory_map(mM);
+    print_memory_map();
 
-    while (true);
+    //there is no interupts/inputs, therefore no loop yet
+    panic();
 }
 
 NORETURN void panic(void) {
-    while (true);
+    while (true) {
+        asm ("hlt");
+    }
 }

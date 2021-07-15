@@ -3,7 +3,7 @@
  * @brief memory function declarations
  */
 
-#include "memory.h"
+#include "memory_map.h"
 #include "print.h"
 #include "vga.h"
 
@@ -103,11 +103,13 @@ bool init_memory_map(MemoryMap* mM) {
     return false;
 }
 
-void print_memory_map(MemoryMap* mM) {
+void print_memory_map(void) {
     i8 str0[] = "Memory Map:\nSize: ";
     i8 str1[] = "\nStart             |Length            |Type      |Acpi      \n";
     i8 str2[] = "|";
     i8 str3[] = "\n";
+
+    MemoryMap* mM = MM_BASE;
 
     print_string(str0);
     print_hex((void*)&(mM->size), 16);
