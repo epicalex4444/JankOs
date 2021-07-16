@@ -5,4 +5,6 @@
 
 #pragma once
 
-#define NORETURN __attribute__((noreturn)) ///< no return attribute
+#define NORETURN __attribute__((noreturn)) ///< tell gcc that a function won't ever return
+#define PACKED __attribute__((packed))  ///< forces structs to have no empty space
+#define NAKED __attribute__((naked)) ///< makes it so gcc doesn't setup stack frame

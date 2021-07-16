@@ -8,6 +8,7 @@
 #include "print.h"
 #include "types.h"
 #include "memory_map.h"
+#include "gdt.h"
 
 void panic(void);
 
@@ -23,6 +24,8 @@ NORETURN void _start(void) {
     clear_screen();
     set_cursor_pos(0);
     show_cursor(14, 15);
+
+    init_gdt();
 
     MemoryMap* mM = MM_BASE;
     if (init_memory_map(mM)) {
