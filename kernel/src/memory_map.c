@@ -9,10 +9,9 @@
 
 /**
  * @brief parses the memory map and allocates it to a struct
- * @param mM pointer to memory map location
  * @return if there was an error
  */
-bool init_memory_map(MemoryMap* mM) {
+bool init_memory_map() {
     //check more than 1 entry
     if (*E820_COUNT <= 1) {
         return true;
@@ -20,6 +19,7 @@ bool init_memory_map(MemoryMap* mM) {
 
     u64* E820 = E820_ENTRIES;
 
+    MemoryMap* mM = MM_BASE;
     mM->entries = MM_ENTRIES;
 
     //fill mM->entries

@@ -9,8 +9,9 @@
 #include "types.h"
 #include "memory_map.h"
 #include "gdt.h"
+#include "page_table_alloc.h"
 
-void panic(void);
+NORETURN void panic(void);
 
 /**
  * @brief kernel entry point
@@ -27,8 +28,7 @@ NORETURN void _start(void) {
 
     init_gdt();
 
-    MemoryMap* mM = MM_BASE;
-    if (init_memory_map(mM)) {
+    if (init_memory_map()) {
         panic();
     }
 

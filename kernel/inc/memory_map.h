@@ -36,5 +36,5 @@ typedef struct {
     MemoryMapEntry* entries; ///< memory map entries
 } MemoryMap;
 
-bool init_memory_map(MemoryMap* mM);
+bool init_memory_map(void);
 void print_memory_map(void);
