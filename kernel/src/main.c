@@ -21,11 +21,7 @@ NORETURN void panic(void);
  *          functions from other files.
  */
 NORETURN void _start(void) {
-    //setup vga
-    clear_screen();
-    set_cursor_pos(0);
-    show_cursor(14, 15);
-
+    init_vga();
     init_gdt();
 
     if (init_memory_map()) {
