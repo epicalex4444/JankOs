@@ -77,10 +77,7 @@ bool init_memory_map() {
             mM->entries[i].length += mM->entries[i + 1].length;
             --mM->size;
             for (u16 j = i + 1; j < mM->size; ++j) {
-                mM->entries[j].start = mM->entries[j + 1].start;
-                mM->entries[j].length = mM->entries[j + 1].length;
-                mM->entries[j].type = mM->entries[j + 1].type;
-                mM->entries[j].acpi = mM->entries[j + 1].acpi;
+                mM->entries[j] = mM->entries[j + 1];
             }
         }
 
@@ -89,10 +86,7 @@ bool init_memory_map() {
             if (mM->entries[i].start + mM->entries[i].length <= 0x100000) {
                 --mM->size;
                 for (u16 j = i; j < mM->size; ++j) {
-                    mM->entries[j].start = mM->entries[j + 1].start;
-                    mM->entries[j].length = mM->entries[j + 1].length;
-                    mM->entries[j].type = mM->entries[j + 1].type;
-                    mM->entries[j].acpi = mM->entries[j + 1].acpi;
+                    mM->entries[j] = mM->entries[j + 1];
                 }
             } else {
                 mM->entries[i].length += mM->entries[i].start - 0x100000;
