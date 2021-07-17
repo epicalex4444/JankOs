@@ -24,6 +24,7 @@ bool init_memory_map() {
 
     //fill mM->entries
     u16 index = 0;
+    bool freeEntry = false;
     for (u16 i = 0; i < *(u64*)E820_COUNT; ++i) {
         //remove length 0 entries
         if (*(E820 + 1) == 0) {
@@ -48,8 +49,16 @@ bool init_memory_map() {
             mM->entries[index].type = BAD;
         }
 
+        if (mM->entries[index].type == FREE) {
+            freeEntry = true;
+        }
+
         E820 += 3;
         ++index;
+    }
+
+    if (!freeEntry) {
+        return true;
     }
 
     mM->size = index;
