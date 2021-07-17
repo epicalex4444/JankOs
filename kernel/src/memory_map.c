@@ -21,9 +21,9 @@ bool init_memory_map() {
 
     MemoryMap* mM = MM_BASE;
     mM->entries = MM_ENTRIES;
+    mM->size = 0;
 
     //fill mM->entries
-    u16 index = 0;
     bool freeEntry = false;
     for (u16 i = 0; i < *(u64*)E820_COUNT; ++i) {
         //remove length 0 entries
@@ -38,30 +38,28 @@ bool init_memory_map() {
             continue;
         }
 
-        mM->entries[index].start = *E820;
-        mM->entries[index].length = *(E820 + 1);
-        mM->entries[index].type = *(u32*)(E820 + 2);
-        mM->entries[index].acpi = *((u32*)(E820 + 2) + 1);
+        mM->entries[mM->size].start = *E820;
+        mM->entries[mM->size].length = *(E820 + 1);
+        mM->entries[mM->size].type = *(u32*)(E820 + 2);
+        mM->entries[mM->size].acpi = *((u32*)(E820 + 2) + 1);
 
         //if the memory is non volotile, set the type to bad
         //TODO figure out if the memory is usable
-        if ((mM->entries[index].acpi & 2) == 2) {
-            mM->entries[index].type = BAD;
+        if ((mM->entries[mM->size].acpi & 2) == 2) {
+            mM->entries[mM->size].type = BAD;
         }
 
-        if (mM->entries[index].type == FREE) {
+        if (mM->entries[mM->size].type == FREE) {
             freeEntry = true;
         }
 
         E820 += 3;
-        ++index;
+        ++mM->size;
     }
 
     if (!freeEntry) {
         return true;
     }
-
-    mM->size = index;
 
     //bubble sort entries
     MemoryMapEntry temp;
