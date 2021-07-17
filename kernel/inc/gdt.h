@@ -8,24 +8,27 @@
 #include "types.h"
 #include "attributes.h"
 
+/// gdt entry struct
 typedef struct PACKED {
-    u16 limit0;
-    u16 base0;
-    u8 base1;
-    u8 access;
-    u8 limit1Flags;
-    u8 base2;
+    u16 limit0;     ///< start of limit
+    u16 base0;      ///< start of base
+    u8 base1;       ///< middle of base
+    u8 access;      ///< access flags
+    u8 limit1Flags; ///< end of limit and more flags
+    u8 base2;       ///< end of base
 } GDTEntry;
 
+/// gdt
 typedef struct PACKED {
-    GDTEntry null;
-    GDTEntry code;
-    GDTEntry data;
+    GDTEntry null; ///< mandatory null entry
+    GDTEntry code; ///< code entry
+    GDTEntry data; ///< data entry
 } GDT;
 
+/// gdt descriptor
 typedef struct PACKED {
-    u16 size;
-    u64 offset;
+    u16 size;   ///< size of the gdt
+    u64 offset; ///< start address of the gdt
 } GDTDescriptor;
 
 NAKED void load_gdt(GDTDescriptor* gdtDescriptor);
