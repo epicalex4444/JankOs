@@ -15,6 +15,7 @@ mov ss, ax
 
 ;move stack to below the boot sector
 mov sp, 0x7C00
+mov bp, 0x7C00
 
 ;save bootdisk in memory
 mov BYTE [BOOT_DISK], dl
