@@ -92,3 +92,14 @@ void clear_screen(void) {
         ++adr;
     }
 }
+
+/**
+ * @brief initialises vga
+ * @details clears screen, sets cursor to 0,
+ *          sets cursor to be visible and be 2 pixels thick
+ */
+void init_vga() {
+    clear_screen();
+    set_cursor_pos(0);
+    show_cursor(14, 15);
+}
