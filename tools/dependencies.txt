@@ -5,6 +5,7 @@ Commands Line Applications:
     nasm               - compilation
     x86_64-elf-gcc     - compilation
     x86_64-elf-ld      - compilation
+    objcopy            - compilation
     cat                - compilation
     echo               - compilation
     fdisk              - compilation
