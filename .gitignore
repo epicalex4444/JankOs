@@ -1,6 +1,5 @@
 #building files
 build/*.bin
-build/*.img
 build/*.iso
 build/*.elf
 kernel/obj
