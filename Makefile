@@ -20,6 +20,7 @@ KERNEL_ENTRY_OBJ := $(KERNEL_OBJ_DIR)/kernel_entry.o
 KERNEL_SRCS := $(wildcard $(KERNEL_SRC_DIR)/*.c)
 KERNEL_OBJS := $(subst src,obj,$(subst .c,.o,$(KERNEL_SRCS)))
 KERNEL_DEPS := $(subst src,dep,$(subst .c,.d,$(KERNEL_SRCS)))
+KERNEL_ELF := $(BUILD_DIR)/kernel.elf
 KERNEL_BIN := $(BUILD_DIR)/kernel.bin
 OS_ISO := $(BUILD_DIR)/JankOs.iso
 
@@ -80,8 +81,11 @@ $(KERNEL_DEP_DIR)/%.d: $(KERNEL_SRC_DIR)/%.c | $(KERNEL_DEP_DIR)
 	$(CC) -I$(KERNEL_INC_DIR) -MM $^ -o $@
 
 #linker respects order of files provided, KERNEL_ENTRY_OBJ has to be the first
-$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
+$(KERNEL_ELF): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
 	$(LD) $(LD_FLAGS) $^ -o $@
+
+$(KERNEL_BIN): $(KERNEL_ELF)
+	objcopy -O binary $< $@
 
 #combines bootloader and kernel
 #then dynamically partitions
