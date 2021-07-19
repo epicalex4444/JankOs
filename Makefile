@@ -50,6 +50,7 @@ all: $(OS_ISO)
 
 clean:
 	rm -f $(OS_ISO)
+	rm -f $(OS_ELF)
 	rm -f $(BUILD_DIR)/*.bin
 	rm -f $(KERNEL_OBJ_DIR)/*
 	rm -f $(KERNEL_DEP_DIR)/*
