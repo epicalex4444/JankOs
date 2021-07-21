@@ -12,9 +12,10 @@ KERNEL_OBJ_DIR := $(KERNEL_DIR)/obj
 KERNEL_DEP_DIR := $(KERNEL_DIR)/dep
 
 #files
-BOOT_BIN := $(BUILD_DIR)/boot.bin
-BOOT_ASM := $(BOOT_DIR)/boot.asm
-BOOT_ASMS := $(wildcard $(BOOT_DIR)/*.asm)
+STAGE1_BIN := $(BUILD_DIR)/stage1.bin
+STAGE2_BIN := $(BUILD_DIR)/stage2.bin
+STAGE1_ASM := $(BOOT_DIR)/stage1.asm
+STAGE2_ASM := $(BOOT_DIR)/stage2.asm
 KERNEL_ENTRY_ASM := $(KERNEL_SRC_DIR)/kernel_entry.asm
 KERNEL_ENTRY_OBJ := $(KERNEL_OBJ_DIR)/kernel_entry.o
 KERNEL_SRCS := $(wildcard $(KERNEL_SRC_DIR)/*.c)
@@ -67,8 +68,11 @@ doxygen: | $(DOCS_DIR)
 #make will use the dependency file rule if it needs to
 include $(KERNEL_DEPS)
 
-$(BOOT_BIN): $(BOOT_ASMS)
-	nasm -f bin -I$(BOOT_DIR) $(NASM_FLAGS) $(BOOT_ASM) -o $@
+$(STAGE1_BIN): $(STAGE1_ASM)
+	nasm -f bin -I$(BOOT_DIR) $(NASM_FLAGS) $< -o $@
+
+$(STAGE2_BIN): $(STAGE2_ASM)
+	nasm -f bin -I$(BOOT_DIR) $(NASM_FLAGS) $< -o $@
 
 $(KERNEL_ENTRY_OBJ): $(KERNEL_ENTRY_ASM)
 	nasm -f elf64 $(NASM_FLAGS) $< -o $@
@@ -91,7 +95,7 @@ $(KERNEL_BIN): $(KERNEL_ELF)
 #combines bootloader and kernel
 #then dynamically partitions
 #adds partition id=0x19, sector 1-end, bootable
-$(OS_ISO): $(BOOT_BIN) $(KERNEL_BIN)
+$(OS_ISO): $(STAGE1_BIN) $(STAGE2_BIN) $(KERNEL_BIN)
 	cat $^ > $@
 	echo -e "n\np\n\n\n\nt\n19\na\nw\n" | fdisk $@ 1>/dev/null
 
