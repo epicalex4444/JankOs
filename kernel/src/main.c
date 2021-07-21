@@ -9,7 +9,7 @@
 #include "types.h"
 #include "memory_map.h"
 #include "gdt.h"
-#include "page_table_alloc.h"
+#include "malloc.h"
 
 NORETURN void panic(void);
 
@@ -28,7 +28,7 @@ NORETURN void _start(void) {
         panic();
     }
 
-    print_memory_map();
+    init_malloc();
 
     //there is no interupts/inputs, therefore no loop yet
     panic();
