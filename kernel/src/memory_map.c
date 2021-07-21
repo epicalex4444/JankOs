@@ -109,9 +109,7 @@ bool init_memory_map() {
     return false;
 }
 
-/**
- * @brief prints the memory map
- */
+/// prints the memory map
 void print_memory_map(void) {
     i8 str0[] = "Memory Map:\nSize: ";
     i8 str1[] = "\nStart             |Length            |Type      |Acpi      \n";
