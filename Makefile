@@ -12,10 +12,10 @@ KERNEL_OBJ_DIR := $(KERNEL_DIR)/obj
 KERNEL_DEP_DIR := $(KERNEL_DIR)/dep
 
 #files
-STAGE1_BIN := $(BUILD_DIR)/stage1.bin
-STAGE2_BIN := $(BUILD_DIR)/stage2.bin
-STAGE1_ASM := $(BOOT_DIR)/stage1.asm
-STAGE2_ASM := $(BOOT_DIR)/stage2.asm
+MBR_ASM := $(BOOT_DIR)/mbr.asm
+VBR_ASM := $(BOOT_DIR)/vbr.asm
+MBR_BIN := $(BUILD_DIR)/mbr.bin
+VBR_BIN := $(BUILD_DIR)/vbr.bin
 KERNEL_ENTRY_ASM := $(KERNEL_SRC_DIR)/kernel_entry.asm
 KERNEL_ENTRY_OBJ := $(KERNEL_OBJ_DIR)/kernel_entry.o
 KERNEL_SRCS := $(wildcard $(KERNEL_SRC_DIR)/*.c)
@@ -23,11 +23,13 @@ KERNEL_OBJS := $(subst src,obj,$(subst .c,.o,$(KERNEL_SRCS)))
 KERNEL_DEPS := $(subst src,dep,$(subst .c,.d,$(KERNEL_SRCS)))
 KERNEL_ELF := $(BUILD_DIR)/kernel.elf
 KERNEL_BIN := $(BUILD_DIR)/kernel.bin
+FS_BIN := $(BUILD_DIR)/fs.bin
 OS_ISO := $(BUILD_DIR)/JankOs.iso
 
 #command options
 CC := x86_64-elf-gcc
 LD := x86_64-elf-ld
+FS_COMPILER := ./tools/fs_compiler
 NASM_FLAGS := 
 QEMU_FLAGS := -drive file=$(OS_ISO),format=raw --enable-kvm
 LD_FLAGS := -nostdlib -Tlink.ld -L$(BUILD_DIR) -lgcc
@@ -51,7 +53,7 @@ all: $(OS_ISO)
 
 clean:
 	rm -f $(OS_ISO)
-	rm -f $(OS_ELF)
+	rm -f $(KERNEL_ELF)
 	rm -f $(BUILD_DIR)/*.bin
 	rm -f $(KERNEL_OBJ_DIR)/*
 	rm -f $(KERNEL_DEP_DIR)/*
@@ -68,11 +70,11 @@ doxygen: | $(DOCS_DIR)
 #make will use the dependency file rule if it needs to
 include $(KERNEL_DEPS)
 
-$(STAGE1_BIN): $(STAGE1_ASM)
-	nasm -f bin -I$(BOOT_DIR) $(NASM_FLAGS) $< -o $@
+$(MBR_BIN): $(MBR_ASM)
+	nasm -f bin $(NASM_FLAGS) $< -o $@
 
-$(STAGE2_BIN): $(STAGE2_ASM)
-	nasm -f bin -I$(BOOT_DIR) $(NASM_FLAGS) $< -o $@
+$(VBR_BIN): $(VBR_ASM)
+	nasm -f bin $(NASM_FLAGS) $< -o $@
 
 $(KERNEL_ENTRY_OBJ): $(KERNEL_ENTRY_ASM)
 	nasm -f elf64 $(NASM_FLAGS) $< -o $@
@@ -92,10 +94,13 @@ $(KERNEL_ELF): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
 $(KERNEL_BIN): $(KERNEL_ELF)
 	objcopy -O binary $< $@
 
+$(FS_BIN): $(KERNEL_BIN)
+	$(FS_COMPILER) 3 $@ $<,kernel.bin
+
 #combines bootloader and kernel
 #then dynamically partitions
 #adds partition id=0x19, sector 1-end, bootable
-$(OS_ISO): $(STAGE1_BIN) $(STAGE2_BIN) $(KERNEL_BIN)
+$(OS_ISO): $(MBR_BIN) $(VBR_BIN) $(FS_BIN)
 	cat $^ > $@
 	echo -e "n\np\n\n\n\nt\n19\na\nw\n" | fdisk $@ 1>/dev/null
 
