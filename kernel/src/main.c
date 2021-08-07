@@ -20,7 +20,7 @@ NORETURN void panic(void);
  *          is designed to not be returned from and instead calls
  *          functions from other files.
  */
-NORETURN void _start(void) {
+NORETURN void start_kernel(void) {
     init_vga();
     init_gdt();
 
