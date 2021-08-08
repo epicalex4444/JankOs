@@ -35,12 +35,15 @@ int 0x13
 jc error.kernel
 
 ;move root folder lba into dap
-mov WORD [dap.offset], VBR_END ;set offset to after the vbr
-mov si, [partitionEntry]       ;mov back partition entry address
-add si, 8                      ;point to lba lower
-mov ebx, [si]                  ;mov lba lower into eax
-add ebx, VBR_SECTORS           ;point to the root folder and not the vbr
-mov [dap.lba_lower], ebx       ;
+mov WORD [dap.offset], VBR_END + 0x200 ;set offset to 2 sectors after the vbr
+mov si, [partitionEntry]               ;mov back partition entry address
+add si, 8                              ;point to lba_lower
+mov ebx, [si]                          ;mov lba_lower into ebx
+add ebx, VBR_SECTORS                   ;point to the root folder and not the vbr
+jno noOverflow                         ;check for overflow
+mov DWORD [dap.lba_upper], 1           ;"add" 1 to upper
+noOverflow:                            ;
+mov [dap.lba_lower], ebx               ;set lba in dap
 
 ;load 1st sector of root folder
 mov ah, 0x42
@@ -49,7 +52,7 @@ int 0x13
 jc error.kernel
 
 ;move sectors from root folder to dap
-mov si, VBR_END
+mov si, VBR_END + 0x200
 mov di, dap.sectors
 movsw
 
@@ -60,47 +63,52 @@ int 0x13
 jc error.kernel
 
 ;check fileNum >= 1
-mov al, BYTE [VBR_END + 8]
-cmp al, 1
+mov eax, [VBR_END + 0x204]
+cmp eax, 1
 jl error.kernel
 
 ;setup dap for loading file headers
-mov WORD [dap.sectors], 1 ;change dap sectors to 1
-mov bx, [dap.offset]      ;get current offset
-mov ax, [VBR_END]         ;get root folder sectors
-mov dx, 512               ;calculate offset after root folder
-mul dx                    ;
-add bx, ax                ;
-mov [dap.offset], bx      ;set dap offset
+mov WORD [dap.sectors], 1      ;change dap sectors to 1
+mov WORD [dap.offset], VBR_END ;set offset to after the vbr, and before the root folder
 
 ;search for kernel.bin file
-mov ecx, [VBR_END + 8]       ;loop iterations = fileNum
-mov bx, VBR_END + 0x1A       ;address of first file lba
+mov ecx, [VBR_END + 0x204]   ;loop iterations = fileNum
+mov bx, VBR_END + 0x20E      ;address of first file lba
 fileLoop:                    ;
-    mov edx, [bx]            ;get lba offset from root folder
-    mov [dap.lba_lower], edx ;set lba in dap
+    mov edx, [bx]            ;set lba_lower in dap
+    mov [dap.lba_lower], edx ;
+    add bx, 4                ;point to upper lba
+    mov edx, [bx]            ;set lba_upper in dap
+    mov [dap.lba_upper], edx ;
     mov ah, 0x42             ;bios code for extended read
     mov dl, [bootDrive]      ;set boot drive
     mov si, dap              ;set dap address
     int 0x13                 ;call extended read
     jc error.kernel          ;error
     mov ax, KERNEL_BIN       ;load kernel.bin string
-    mov dx, [dap.offset]     ;get address of fileName
-    add dx, 0x08             ;
+    mov dx, VBR_END + 0x08   ;fileName address
     call strCmp              ;check if fileName is kernel.bin
     je fileLoopEnd           ;if kernel.bin the kernel is found and we can exit
+    add bx, 4                ;point to next lba
     loop fileLoop            ;loop
     jmp error.kernel         ;kernel couldn't be located error
 fileLoopEnd:                 ;
+sub bx, 4                    ;point to lba start, not upper half
 
 ;setup dap for loading the kernel
-mov ax, [bx]                  ;address of lba of kernel.bin header(in root folder header)
-inc ax                        ;point to next sector which is kernel.bin
-mov [dap.lba_lower], ax       ;set lba
-mov bx, [dap.offset]          ;address of kernel.bin length(in file header)
-mov dx, [bx]                  ;length of kernel.bin in sectors
-mov [dap.sectors], dx         ;dap sectors address
-mov WORD [dap.offset], 0x8000 ;set kernel memory offset
+mov WORD [dap.offset], VBR_END ;set kernel memory offset
+mov eax, [bx]                  ;set lba_lower
+add bx, 4                      ;point to lba_upper
+mov ecx, [bx]                  ;set lba_upper
+inc eax                        ;point to next sector which is kernel.bin
+jno noOverflow2                ;check for overflow
+inc ecx                        ;add 1 to upper
+jo error.kernel                ;if this overflows it's an error
+noOverflow2:                   ;
+mov [dap.lba_lower], eax       ;set lba
+mov [dap.lba_upper], ecx       ;
+mov dx, [VBR_END]              ;length of kernel.bin
+mov [dap.sectors], dx          ;dap sectors address
 
 ;store kernel length for later
 mov [kernelSectors], dx
@@ -326,6 +334,9 @@ mov es, ax
 mov fs, ax
 mov gs, ax
 mov ss, ax
+
+;TODO: check in memory map if kernel
+;can actually be moved to 0x100000
 
 ;move kernel
 cld                      ;clear direction flag
