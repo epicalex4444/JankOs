@@ -94,13 +94,16 @@ fileLoop:                    ;
 fileLoopEnd:                 ;
 
 ;setup dap for loading the kernel
-mov si, [dap.offset]          ;address of kernel.bin length(in file header)
-mov di, dap.sectors           ;dap sectors address
-movsw                         ;set sectors
 mov ax, [bx]                  ;address of lba of kernel.bin header(in root folder header)
 inc ax                        ;point to next sector which is kernel.bin
 mov [dap.lba_lower], ax       ;set lba
+mov bx, [dap.offset]          ;address of kernel.bin length(in file header)
+mov dx, [bx]                  ;length of kernel.bin in sectors
+mov [dap.sectors], dx         ;dap sectors address
 mov WORD [dap.offset], 0x8000 ;set kernel memory offset
+
+;store kernel length for later
+mov [kernelSectors], dx
 
 ;load kernel
 mov ah, 0x42
@@ -222,6 +225,7 @@ dap:
 
 partitionEntry: dw 0
 bootDrive: db 0
+kernelSectors: dd 0
 
 ;pad sector
 times 510 - ($ - $$) db 0
@@ -323,12 +327,20 @@ mov fs, ax
 mov gs, ax
 mov ss, ax
 
+;move kernel
+cld                      ;clear direction flag
+mov rcx, [kernelSectors] ;load sectors into rcx
+shl rcx, 6               ;multiply by 64(each sector is 64 quad words)
+mov rsi, 0x8000          ;source address
+mov rdi, 0x100000        ;destination address
+rep movsq                ;repeat moving 64bits from source to destination
+
 ;set bootdrive and partition entry
 mov si, [partitionEntry]
 mov dl, [bootDrive]
 
 ;jump to kernel (jumps to kernel_entry.asm)
-jmp 0x8000
+jmp 0x100000
 
 ;sector align extra space
 times 1024 - ($ - $$) db 0
