@@ -115,6 +115,7 @@ bool free(void* ptr, u64 bytes) {
     return true;
 }
 
+/// prints the bitmap
 void print_bitmap() {
     i8 str0[] = "BitMap:\nSize: ";
     i8 str1[] = "\nStart             |Length            |Type\n";

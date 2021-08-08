@@ -5,9 +5,7 @@
 
 #include "gdt.h"
 
-/**
- * @brief makes and loads gdt
- */
+/// makes and loads gdt
 void init_gdt() {
     GDT gdt = {
         .null = {0, 0, 0, 0, 0, 0},
