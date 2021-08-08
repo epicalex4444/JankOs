@@ -7,7 +7,7 @@
 
 #include "types.h"
 
-//parsed memory map is made at 0x5000 then moved to 0x500 replacing the E820 memory map
+//memory map overrides the mbr
 #define E820_COUNT (u16*)0x5000 ///< pointer to E820 memory map entry counter
 #define E820_ENTRIES (u64*)0x5002 ///< E820 memory map base address
 #define MM_BASE (MemoryMap*)0x500 ///< base of memory map
