@@ -87,6 +87,8 @@ mov ah, 0x41
 mov bx, 0x55AA
 int 0x13
 jc error.extendedRead
+cmp bx, 0xAA55
+jne error.extendedRead
 
 ;save partion entry base
 push si
