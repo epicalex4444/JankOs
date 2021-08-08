@@ -1,0 +1,12 @@
+0x0 - 0x500, reserved
+0x500 - 0x1000, memory map
+0x1000 - 0x5000, page tables
+0x5000+ bitmap
+0x9FC00- stack
+0x9FC00 - 0x100000, reserved
+0x100000+ kernel and extra memory, defined by memory map at runtime
+
+stack and bitmap grow towards each other and can theoretically overlap
+mbr is at 0x600 but is overwritten later
+E820 is at 0x5000 but is overwritten
+vbr is at 0x7C00 but is fine to be overwritten by the bitmap

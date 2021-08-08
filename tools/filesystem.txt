@@ -1,0 +1,13 @@
+//forced sector aligned
+folder header:
+uint32_t sectors;   //how many sectors this header takes up
+uint32_t fileNum;   //number of files
+uint32_t folderNum; //number of subfolders
+uint8_t name[];     //name null terminated
+uint64_t files[];   //lba offsets of files
+uint64_t folders[]; //lba offsets of subfolders
+
+//always takes up 1 sector
+file header:
+uint64_t sectors; //sectors of file, not including header
+uint8_t name[];   //name null terminated, max length 63 including null
