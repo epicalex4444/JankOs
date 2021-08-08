@@ -31,6 +31,7 @@ mov ss, ax
 ;set stack poniter to just below
 ;stack grows downwards
 mov sp, 0x7C00
+mov bp, 0x7C00
 
 ;save boot drive(dl)
 push dx
