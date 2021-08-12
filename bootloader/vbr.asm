@@ -4,6 +4,7 @@
 ;si = partition entry
 ;segment registers = 0
 ;stack pointer = 0x7C00
+;base pointer = 0x7C00
 ;bios interupts enabled
 ;real mode
 
@@ -13,18 +14,20 @@
 ;get into long mode
 ;   identity paging
 ;   bare minimum gdt
-;   disble bios interupts
-;   update segment registers
+;update segment registers
+;disble bios interupts
+;dl and si are set back to starting values
 ;hand over to the kernel
-;maintains bootdrive and partition entry
 
+;declare current state to the assembler
 [org 0x7C00]
 [bits 16]
 
+;macros
 VBR_SECTORS: equ 2
 VBR_END: equ 0x8000
 
-;save partition entry and boot drive
+;save partition entry and boot drive in memory
 mov [partitionEntry], si
 mov [bootDrive], dl
 
@@ -35,15 +38,15 @@ int 0x13
 jc error.kernel
 
 ;move root folder lba into dap
-mov WORD [dap.offset], VBR_END + 0x200 ;set offset to 2 sectors after the vbr
-mov si, [partitionEntry]               ;mov back partition entry address
-add si, 8                              ;point to lba_lower
-mov ebx, [si]                          ;mov lba_lower into ebx
-add ebx, VBR_SECTORS                   ;point to the root folder and not the vbr
+mov WORD [dap.offset], VBR_END + 0x200 ;set dap offset to 2 sectors after the vbr
+mov si, [partitionEntry]               ;load partition entry address into si
+add si, 8                              ;point to the lba in the partition entry
+mov ebx, [si]                          ;mov lba into ebx
+add ebx, VBR_SECTORS                   ;add vbr offset to point to the root folder
 jno noOverflow                         ;check for overflow
-mov DWORD [dap.lba_upper], 1           ;"add" 1 to upper
+mov DWORD [dap.lba_upper], 1           ;if oveflow we set upper lba in dap to 1(it is always 0 before)
 noOverflow:                            ;
-mov [dap.lba_lower], ebx               ;set lba in dap
+mov [dap.lba_lower], ebx               ;set lower in dap
 
 ;load 1st sector of root folder
 mov ah, 0x42
@@ -68,10 +71,11 @@ cmp eax, 1
 jl error.kernel
 
 ;setup dap for loading file headers
-mov WORD [dap.sectors], 1      ;change dap sectors to 1
-mov WORD [dap.offset], VBR_END ;set offset to after the vbr, and before the root folder
+mov WORD [dap.sectors], 1
+mov WORD [dap.offset], VBR_END
 
 ;search for kernel.bin file
+;stores lba of kernel.bin in bx
 mov ecx, [VBR_END + 0x204]   ;loop iterations = fileNum
 mov bx, VBR_END + 0x20E      ;address of first file lba
 fileLoop:                    ;
@@ -84,33 +88,33 @@ fileLoop:                    ;
     mov dl, [bootDrive]      ;set boot drive
     mov si, dap              ;set dap address
     int 0x13                 ;call extended read
-    jc error.kernel          ;error
+    jc error.kernel          ;
     mov ax, KERNEL_BIN       ;load kernel.bin string
     mov dx, VBR_END + 0x08   ;fileName address
     call strCmp              ;check if fileName is kernel.bin
-    je fileLoopEnd           ;if kernel.bin the kernel is found and we can exit
+    je fileLoopEnd           ;if kernel.bin is found and we can exit
     add bx, 4                ;point to next lba
-    loop fileLoop            ;loop
+    loop fileLoop            ;
     jmp error.kernel         ;kernel couldn't be located error
 fileLoopEnd:                 ;
 sub bx, 4                    ;point to lba start, not upper half
 
 ;setup dap for loading the kernel
 mov WORD [dap.offset], VBR_END ;set kernel memory offset
-mov eax, [bx]                  ;set lba_lower
+mov eax, [bx]                  ;set eax to lba_lower
 add bx, 4                      ;point to lba_upper
-mov ecx, [bx]                  ;set lba_upper
+mov ecx, [bx]                  ;set ecx to lba_upper
 inc eax                        ;point to next sector which is kernel.bin
 jno noOverflow2                ;check for overflow
 inc ecx                        ;add 1 to upper
 jo error.kernel                ;if this overflows it's an error
 noOverflow2:                   ;
-mov [dap.lba_lower], eax       ;set lba
+mov [dap.lba_lower], eax       ;set lba in dap
 mov [dap.lba_upper], ecx       ;
-mov dx, [VBR_END]              ;length of kernel.bin
-mov [dap.sectors], dx          ;dap sectors address
+mov dx, [VBR_END]              ;load kernel.bin sectors into dx
+mov [dap.sectors], dx          ;set dp sectors
 
-;store kernel length for later
+;store kernel sectors for later
 mov [kernelSectors], dx
 
 ;load kernel
@@ -168,7 +172,7 @@ print_string:
 ;params:
 ;   ax = address of null terminated string 1
 ;   dx = address of null terminated string 2
-;returns: zf unset on match else set
+;returns: zf set on match else unset
 strCmp:
     pusha              ;
     .loop:             ;
@@ -179,10 +183,10 @@ strCmp:
         cmp cl, ch     ;check whether the chars are equal
         jne .notEqual  ;exit not equal
         test cl, cl    ;test if str1/str2 has ended
-        jz .equal      ;exit equal equal
+        jz .equal      ;exit equal
         inc ax         ;point to next str1 char
         inc dx         ;point to next str2 char
-        jmp .loop      ;loop
+        jmp .loop      ;
     .notEqual:         ;
         pushfd         ;set cx to flags register
         pop cx         ;
@@ -225,11 +229,11 @@ MM_ERROR:        db "memory map error", 0
 dap:
 .size:      db 0x10
 .null:      db 0
-.sectors:   dw 1      ;placeholder
-.offset:    dw 0x7E00 ;placeholder
+.sectors:   dw 1
+.offset:    dw 0x7E00
 .segment:   dw 0
-.lba_lower: dd 2      ;placeholder
-.lba_upper: dd 0      ;placeholder
+.lba_lower: dd VBR_SECTORS
+.lba_upper: dd 0
 
 partitionEntry: dw 0
 bootDrive: db 0
@@ -346,7 +350,7 @@ mov rsi, 0x8000          ;source address
 mov rdi, 0x100000        ;destination address
 rep movsq                ;repeat moving 64bits from source to destination
 
-;set bootdrive and partition entry
+;restore dl and si for use by the kernel
 mov si, [partitionEntry]
 mov dl, [bootDrive]
 

@@ -78,7 +78,7 @@ partLoop:                ;
     test BYTE [si], 0x80 ;test for active bit
     jne partLoopEnd      ;found active bit exit
     add si, 0x10         ;point to next entry
-    loop partLoop        ;loop
+    loop partLoop        ;
     jmp error.partition  ;error if no bootable partion found
 partLoopEnd:             ;
 
@@ -132,7 +132,7 @@ print_string:
         popa         ;
         ret          ;
 
-;error handling
+;error handling, prints error messages then hangs
 error:
     .partition:
         mov bx, PARTITION_ERROR
@@ -164,8 +164,8 @@ dap:
 .sectors:   dw 1
 .offset:    dw 0x7C00
 .segment:   dw 0
-.lba_lower: dd 0 ;placeholder
-.lba_upper: dd 0 ;placeholder
+.lba_lower: dd 0
+.lba_upper: dd 0
 
 ;pad until partition table
 times 436 - ($ - $$) db 0
