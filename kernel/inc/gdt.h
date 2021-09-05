@@ -33,3 +33,5 @@ typedef struct PACKED {
 
 NAKED void load_gdt(GDTDescriptor* gdtDescriptor);
 void init_gdt(void);
+void enter_compatability_mode(void);
+void exit_compatability_mode(void);

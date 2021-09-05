@@ -4,20 +4,24 @@
  */
 
 #include "gdt.h"
+#include "bits.h"
+#include "print.h"
 
-/// makes and loads gdt
+/// gdt is stored globally so it can easily be modified later
+GDT gdt = {
+    .null = {0, 0, 0, 0, 0, 0},
+    .code = {0, 0, 0, 0x9A, 0xA0, 0},
+    .data = {0, 0, 0, 0x92, 0xA0, 0}
+};
+
+/// gdt descriptor also stored globaly so the gdt size can be updated
+GDTDescriptor gdtDescriptor = {
+    (u16)(sizeof(gdt) * 8 - 1),
+    (u64)&gdt
+};
+
+/// wrapper because the gdt is obfuscated to this file
 void init_gdt() {
-    GDT gdt = {
-        .null = {0, 0, 0, 0, 0, 0},
-        .code = {0, 0, 0, 0x9A, 0xA0, 0},
-        .data = {0, 0, 0, 0x92, 0xA0, 0}
-    };
-
-    GDTDescriptor gdtDescriptor = {
-        sizeof(gdt) * 8 - 1,
-        (u64)&gdt
-    };
-
     load_gdt(&gdtDescriptor);
 }
 
@@ -45,4 +49,16 @@ NAKED void load_gdt(GDTDescriptor* gdtDescriptor) {
         : "r" (gdtDescriptor)
         : "rax"
     );
+}
+
+/// clears 64 bit in code segment of gdt then reloads it
+void enter_compatability_mode(void) {
+    CLEAR_BIT(gdt.code.limit1Flags, 3);
+    load_gdt(&gdtDescriptor);
+}
+
+/// sets 64 bit in code segment of gdt then reloads it
+void exit_compatability_mode(void) {
+    SET_BIT(gdt.code.limit1Flags, 3);
+    load_gdt(&gdtDescriptor);
 }
