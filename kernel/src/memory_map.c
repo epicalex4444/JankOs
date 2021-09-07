@@ -12,53 +12,33 @@
  * @return if there was an error
  */
 bool init_memory_map() {
-    //check more than 1 entry
-    if (*E820_COUNT <= 1) {
+    //check there is an entry
+    if (!*E820_COUNT) {
         return true;
     }
 
+    //assign E820 and mM from static address values
     u64* E820 = E820_ENTRIES;
-
     MemoryMap* mM = MM_BASE;
     mM->entries = MM_ENTRIES;
-    mM->size = 0;
 
     //fill mM->entries
-    bool freeEntry = false;
-    for (u16 i = 0; i < *(u64*)E820_COUNT; ++i) {
+    for (mM->size = 0; mM->size < (u64)(*E820_COUNT); ++mM->size, E820 += 3) {
         //remove length 0 entries
-        if (*(E820 + 1) == 0) {
-            E820 += 3;
+        if (!*(E820 + 1)) {
             continue;
         }
 
         //remove entries with acpi ignore bit unset
-        if ((*((u32*)(E820 + 2) + 1) & 1) == 0) {
-            E820 += 3;
+        if (!(*((u32*)(E820 + 2) + 1) & 1)) {
             continue;
         }
 
+        //assign values from the E820 table
         mM->entries[mM->size].start = *E820;
         mM->entries[mM->size].length = *(E820 + 1);
         mM->entries[mM->size].type = *(u32*)(E820 + 2);
         mM->entries[mM->size].acpi = *((u32*)(E820 + 2) + 1);
-
-        //if the memory is non volotile, set the type to bad
-        //TODO figure out if the memory is usable
-        if ((mM->entries[mM->size].acpi & 2) == 2) {
-            mM->entries[mM->size].type = BAD;
-        }
-
-        if (mM->entries[mM->size].type == FREE) {
-            freeEntry = true;
-        }
-
-        E820 += 3;
-        ++mM->size;
-    }
-
-    if (!freeEntry) {
-        return true;
     }
 
     //bubble sort entries
@@ -73,10 +53,45 @@ bool init_memory_map() {
         }
     }
 
+    bool freeEntry = false;
+
+    //more parsing/checking of the memory map
     for (i16 i = mM->size - 2; i >= 0; --i) {
         //check for overlaps
         if (mM->entries[i].start + mM->entries[i].length > mM->entries[i + 1].start) {
             return true;
+        }
+
+        //keeps track if there is a free entry
+        if (mM->entries[i].type == FREE) {
+            freeEntry = true;
+        }
+
+        //if the memory is non volotile, set the type to bad
+        //TODO figure out if the memory is usable
+        if ((mM->entries[mM->size].acpi & 2) == 2) {
+            mM->entries[mM->size].type = BAD;
+        }
+
+        //TODO reclaim acpi reclamable
+
+        //reserve memory under 0x100000
+        //this memory space is used for many important things that are often considered free
+        if ((mM->entries[i].start < 0x100000) && (mM->entries[i].type == FREE)) {
+            if (mM->entries[i].start + mM->entries[i].length <= 0x100000) {
+                mM->entries[i].type = RESERVED;
+            } else {
+                ++mM->size;
+                for (u16 j = mM->size; j > i; --j) {
+                    mM->entries[j] = mM->entries[j - 1];
+                }
+                mM->entries[i + 1].start = 0x100000;
+                mM->entries[i + 1].length = 0x100000 - mM->entries[i].start;
+                mM->entries[i + 1].type = mM->entries[i].type;
+                mM->entries[i + 1].acpi = mM->entries[i].acpi;
+                mM->entries[i].type = RESERVED;
+                mM->entries[i].length = 0x100000 - mM->entries[i].start;
+            }
         }
 
         //combine adjecent memories of the same type and acpi
@@ -87,26 +102,10 @@ bool init_memory_map() {
                 mM->entries[j] = mM->entries[j + 1];
             }
         }
-
-        //remove free memory under 0x100000
-        if ((mM->entries[i].start <= 0x100000) && (mM->entries[i].type == FREE)) {
-            if (mM->entries[i].start + mM->entries[i].length <= 0x100000) {
-                --mM->size;
-                for (u16 j = i; j < mM->size; ++j) {
-                    mM->entries[j] = mM->entries[j + 1];
-                }
-            } else {
-                mM->entries[i].length += mM->entries[i].start - 0x100000;
-                mM->entries[i].start = 0x100000;
-            }
-        }
     }
 
-    //TODO
-    //align with page tables
-    //reclaim acpi reclamable
-
-    return false;
+    //error if there is no free entry
+    return !freeEntry;
 }
 
 /// prints the memory map
