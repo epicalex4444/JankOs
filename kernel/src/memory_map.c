@@ -44,7 +44,7 @@ bool init_memory_map() {
     //bubble sort entries
     MemoryMapEntry temp;
     for (u16 i = 0; i < mM->size; ++i) {
-        for (u16 j = 0; j < mM->size; ++j) {
+        for (u16 j = i + 1; j < mM->size; ++j) {
             if (mM->entries[i].start < mM->entries[j].start) {
                 temp = mM->entries[j];
                 mM->entries[j] = mM->entries[i];
