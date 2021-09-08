@@ -26,6 +26,7 @@
 ;macros
 VBR_SECTORS: equ 2
 FILE_HEADER_OFFSET: equ 0x7C00 + VBR_SECTORS * 0x200
+FILE_HEADER_SECTORS: equ FILE_HEADER_OFFSET
 FOLDER_HEADER_OFFSET: equ FILE_HEADER_OFFSET + 0x200
 FOLDER_HEADER_FILE_NUM: equ FOLDER_HEADER_OFFSET + 4
 FOLDER_HEADER_FILE_NAME: equ FILE_HEADER_OFFSET + 8
@@ -35,6 +36,7 @@ PML4_OFFSET: equ 0x1000
 PDP_OFFSET: equ PML4_OFFSET + 0x1000
 PD_OFFSET: equ PDP_OFFSET + 0x1000
 PT_OFFSET: equ PD_OFFSET + 0x1000
+TEMP_KERNEL_OFFSET: equ FILE_HEADER_OFFSET
 KERNEL_OFFSET: equ 0x100000
 
 ;save partition entry and boot drive in memory
@@ -110,7 +112,7 @@ fileLoopEnd:                        ;
 sub bx, 4                           ;point to lba start, not upper half
 
 ;setup dap for loading the kernel
-mov WORD [dap.offset], FILE_HEADER_OFFSET ;set kernel memory offset
+mov WORD [dap.offset], TEMP_KERNEL_OFFSET ;set kernel memory offset
 mov eax, [bx]                             ;set eax to lba_lower
 add bx, 4                                 ;point to lba_upper
 mov ecx, [bx]                             ;set ecx to lba_upper
@@ -121,7 +123,7 @@ jo error.kernel                           ;if this overflows it's an error
 noOverflow2:                              ;
 mov [dap.lba_lower], eax                  ;set lba in dap
 mov [dap.lba_upper], ecx                  ;
-mov dx, [FILE_HEADER_OFFSET]              ;load kernel.bin sectors into dx
+mov dx, [FILE_HEADER_SECTORS]             ;load kernel.bin sectors into dx
 mov [dap.sectors], dx                     ;set dp sectors
 
 ;store kernel sectors for later
@@ -353,7 +355,7 @@ mov ss, ax
 cld                         ;clear direction flag
 mov rcx, [kernelSectors]    ;load sectors into rcx
 shl rcx, 6                  ;multiply by 64(each sector is 64 quad words)
-mov rsi, FILE_HEADER_OFFSET ;source address
+mov rsi, TEMP_KERNEL_OFFSET ;source address
 mov rdi, KERNEL_OFFSET      ;destination address
 rep movsq                   ;repeat moving 64bits from source to destination
 
