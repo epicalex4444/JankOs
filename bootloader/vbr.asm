@@ -9,11 +9,14 @@
 ;real mode
 
 ;what this vbr does
-;read fs to find kernel
-;load kernel into memory
+;read fs to find kernel.bin
+;generate memory map
+;load kernel.bin to temporary spot
 ;get into long mode
 ;   identity paging
 ;   bare minimum gdt
+;move kernel.bin to 0x100000
+;update mM to make sure the kernel is in reserved memory
 ;update segment registers
 ;disble bios interupts
 ;dl and si are set back to starting values
@@ -25,17 +28,25 @@
 
 ;macros
 VBR_SECTORS: equ 2
+
 FILE_HEADER_OFFSET: equ 0x7C00 + VBR_SECTORS * 0x200
 FILE_HEADER_SECTORS: equ FILE_HEADER_OFFSET
+
 FOLDER_HEADER_OFFSET: equ FILE_HEADER_OFFSET + 0x200
 FOLDER_HEADER_FILE_NUM: equ FOLDER_HEADER_OFFSET + 4
 FOLDER_HEADER_FILE_NAME: equ FILE_HEADER_OFFSET + 8
 FOLDER_HEADER_FILE_LBA: equ FOLDER_HEADER_OFFSET + 14
+
 MM_OFFSET: equ 0x5000
-PML4_OFFSET: equ 0x1000
-PDP_OFFSET: equ PML4_OFFSET + 0x1000
-PD_OFFSET: equ PDP_OFFSET + 0x1000
-PT_OFFSET: equ PD_OFFSET + 0x1000
+MM_SIZE: equ MM_OFFSET
+MM_ENTRIES: equ MM_OFFSET + 2
+
+PAGE_TABLES_OFFSET: equ 0x1000
+PML4: equ PAGE_TABLES_OFFSET
+PDP: equ PML4 + 0x1000
+PD: equ PDP + 0x1000
+PT: equ PD + 0x1000
+
 TEMP_KERNEL_OFFSET: equ FILE_HEADER_OFFSET
 KERNEL_OFFSET: equ 0x100000
 
@@ -101,7 +112,7 @@ fileLoop:                           ;
     mov si, dap                     ;set dap address
     int 0x13                        ;call extended read
     jc error.kernel                 ;
-    mov ax, KERNEL_BIN              ;load kernel.bin string
+    mov ax, KERNEL_BIN                ;load kernel.bin string
     mov dx, FOLDER_HEADER_FILE_NAME ;fileName address
     call strCmp                     ;check if fileName is kernel.bin
     je fileLoopEnd                  ;if kernel.bin is found and we can exit
@@ -262,28 +273,28 @@ extendedVbr:
 
 ;setup identity paging for the first 2 megabytes
 ;the present bit an read/write bit is set on all entires
-mov edi, PML4_OFFSET                    ;PML4 start address
-mov cr3, edi                            ;point cr3 to PML4
-xor eax, eax                            ;clear tables
-mov ecx, 4096                           ;
-rep stosd                               ;
-mov DWORD [PML4_OFFSET], PDP_OFFSET + 3 ;point PML4 to PDP
-mov DWORD [PDP_OFFSET], PD_OFFSET + 3   ;point PDP to PD
-mov DWORD [PD_OFFSET], PT_OFFSET + 3    ;point PD to PT
-mov edi, PT_OFFSET                      ;PT start address
-mov ebx, 0x00000003                     ;start value
-mov ecx, 512                            ;512 iterations
-pagingLoop:                             ;
-    mov DWORD [edi], ebx                ;write entry
-    add ebx, 0x1000                     ;update ebx to point to next memory location
-    add edi, 8                          ;update edi to next PT entry
-    loop pagingLoop                     ;
+mov edi, PML4             ;PML4 start address
+mov cr3, edi              ;point cr3 to PML4
+xor eax, eax              ;clear tables
+mov ecx, 4096             ;
+rep stosd                 ;
+mov DWORD [PML4], PDP + 3 ;point PML4 to PDP
+mov DWORD [PDP], PD + 3   ;point PDP to PD
+mov DWORD [PD], PT + 3    ;point PD to PT
+mov edi, PT               ;PT start address
+mov ebx, 0x00000003       ;start value
+mov ecx, 512              ;512 iterations
+pagingLoop:               ;
+    mov DWORD [edi], ebx  ;write entry
+    add ebx, 0x1000       ;update ebx to point to next memory location
+    add edi, 8            ;update edi to next PT entry
+    loop pagingLoop       ;
 
 ;generate E820 memory map
 mov edx, 0x534D4150           ;smap code
 xor ax, ax                    ;set count to 0
-mov [MM_OFFSET], ax           ;
-mov di, MM_OFFSET + 2         ;base address for memory map
+mov [MM_SIZE], ax             ;
+mov di, MM_ENTRIES            ;base address for memory map
 xor ebx, ebx                  ;continuation value, starts at 0
 memoryMapLoop:                ;
     mov eax, 0xE820           ;memory map bios function
@@ -292,9 +303,9 @@ memoryMapLoop:                ;
     int 0x15                  ;call memory map interupt
     jc error.mm               ;
     add di, 24                ;iterate di
-    mov ax, [MM_OFFSET]       ;iterate count
+    mov ax, [MM_SIZE]         ;iterate count
     inc ax                    ;
-    mov [MM_OFFSET], ax       ;
+    mov [MM_SIZE], ax         ;
     test ebx, ebx             ;check if finished
     jne memoryMapLoop         ;
 
@@ -351,6 +362,39 @@ mov fs, ax
 mov gs, ax
 mov ss, ax
 
+;check if kernel fits into memory map
+;also finds the entry where the kernel fits into
+xor rcx, rcx               ;0 rcx
+mov cx, [MM_SIZE]          ;move mm.size into cx
+mov rdi, MM_ENTRIES        ;mov mm.entries address into rdi
+xor r8, r8                 ;0 rdx
+mov r8w, [kernelSectors]   ;mov kernel.sectors into dx
+shl r8, 6                  ;multiply rdx by 64(turns sectors to bytes)
+kernelLoop:                ;
+    mov r9, [rdi]          ;move mm.offset into r9
+    add rdi, 8             ;point to mm.length
+    mov r10, [rdi]         ;move mm.length into r10
+    add rdi, 8             ;point to mm.type
+    mov r11, [rdi]         ;move mm.type into r11
+    add rdi, 4             ;point to mm.acpi
+    mov r12, [rdi]         ;move mm.acpi into r12
+    add rdi, 4             ;point to next entry
+    cmp r11d, 1            ;if mm.type != 1
+    jne .invalid           ;
+    test r12d, 1           ;if mm.acpi & 1
+    je .invalid            ;
+    cmp r9, KERNEL_OFFSET  ;if mm.offset > kernel.offset
+    jg .invalid            ;
+    add r8, KERNEL_OFFSET  ;if kernel.length + kerneloffset < mm.length
+    cmp r10, r8            ;
+    jl .invalid            ;
+    jmp .valid             ;passed all checks kernel can fit in this entry
+    .invalid:              ;
+    loop kernelLoop        ;
+    jmp error.die          ;didn't find a valid entry error
+    .valid:                ;
+    sub rdi, 24            ;point to valid mm entry
+
 ;move kernel
 cld                         ;clear direction flag
 mov rcx, [kernelSectors]    ;load sectors into rcx
@@ -358,9 +402,6 @@ shl rcx, 6                  ;multiply by 64(each sector is 64 quad words)
 mov rsi, TEMP_KERNEL_OFFSET ;source address
 mov rdi, KERNEL_OFFSET      ;destination address
 rep movsq                   ;repeat moving 64bits from source to destination
-
-;TODO
-;modify mm to make the area the kernel is located reserved
 
 ;restore dl and si for use by the kernel
 mov si, [partitionEntry]
