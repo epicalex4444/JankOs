@@ -26,6 +26,7 @@
 ;macros
 VBR_SECTORS: equ 2
 VBR_END: equ 0x8000
+MM_OFFSET: equ 0x5000
 
 ;save partition entry and boot drive in memory
 mov [partitionEntry], si
@@ -267,11 +268,11 @@ pagingLoop:                ;
     add edi, 8             ;update edi to next PT entry
     loop pagingLoop        ;
 
-;generate memory map for the kernel to use
+;generate E820 memory map
 mov edx, 0x534D4150           ;smap code
 xor ax, ax                    ;set count to 0
-mov [0x5000], ax              ;
-mov di, 0x5002                ;base address for memory map
+mov [MM_OFFSET], ax           ;
+mov di, MM_OFFSET + 2         ;base address for memory map
 xor ebx, ebx                  ;continuation value, starts at 0
 memoryMapLoop:                ;
     mov eax, 0xE820           ;memory map bios function
@@ -280,9 +281,9 @@ memoryMapLoop:                ;
     int 0x15                  ;call memory map interupt
     jc error.mm               ;
     add di, 24                ;iterate di
-    mov ax, [0x5000]          ;interate count
+    mov ax, [MM_OFFSET]       ;iterate count
     inc ax                    ;
-    mov [0x5000], ax          ;
+    mov [MM_OFFSET], ax       ;
     test ebx, ebx             ;check if finished
     jne memoryMapLoop         ;
 
@@ -339,9 +340,6 @@ mov fs, ax
 mov gs, ax
 mov ss, ax
 
-;TODO: check in memory map if kernel
-;can actually be moved to 0x100000
-
 ;move kernel
 cld                      ;clear direction flag
 mov rcx, [kernelSectors] ;load sectors into rcx
@@ -349,6 +347,9 @@ shl rcx, 6               ;multiply by 64(each sector is 64 quad words)
 mov rsi, 0x8000          ;source address
 mov rdi, 0x100000        ;destination address
 rep movsq                ;repeat moving 64bits from source to destination
+
+;TODO
+;modify mm to make the area the kernel is located reserved
 
 ;restore dl and si for use by the kernel
 mov si, [partitionEntry]
