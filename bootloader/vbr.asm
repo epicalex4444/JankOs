@@ -25,8 +25,17 @@
 
 ;macros
 VBR_SECTORS: equ 2
-VBR_END: equ 0x8000
+FILE_HEADER_OFFSET: equ 0x7C00 + VBR_SECTORS * 0x200
+FOLDER_HEADER_OFFSET: equ FILE_HEADER_OFFSET + 0x200
+FOLDER_HEADER_FILE_NUM: equ FOLDER_HEADER_OFFSET + 4
+FOLDER_HEADER_FILE_NAME: equ FILE_HEADER_OFFSET + 8
+FOLDER_HEADER_FILE_LBA: equ FOLDER_HEADER_OFFSET + 14
 MM_OFFSET: equ 0x5000
+PML4_OFFSET: equ 0x1000
+PDP_OFFSET: equ PML4_OFFSET + 0x1000
+PD_OFFSET: equ PDP_OFFSET + 0x1000
+PT_OFFSET: equ PD_OFFSET + 0x1000
+KERNEL_OFFSET: equ 0x100000
 
 ;save partition entry and boot drive in memory
 mov [partitionEntry], si
@@ -39,15 +48,15 @@ int 0x13
 jc error.kernel
 
 ;move root folder lba into dap
-mov WORD [dap.offset], VBR_END + 0x200 ;set dap offset to 2 sectors after the vbr
-mov si, [partitionEntry]               ;load partition entry address into si
-add si, 8                              ;point to the lba in the partition entry
-mov ebx, [si]                          ;mov lba into ebx
-add ebx, VBR_SECTORS                   ;add vbr offset to point to the root folder
-jno noOverflow                         ;check for overflow
-mov DWORD [dap.lba_upper], 1           ;if oveflow we set upper lba in dap to 1(it is always 0 before)
-noOverflow:                            ;
-mov [dap.lba_lower], ebx               ;set lower in dap
+mov WORD [dap.offset], FOLDER_HEADER_OFFSET ;set dap offset to 2 sectors after the vbr
+mov si, [partitionEntry]                    ;load partition entry address into si
+add si, 8                                   ;point to the lba in the partition entry
+mov ebx, [si]                               ;mov lba into ebx
+add ebx, VBR_SECTORS                        ;add vbr offset to point to the root folder
+jno noOverflow                              ;check for overflow
+mov DWORD [dap.lba_upper], 1                ;if oveflow we set upper lba in dap to 1(it is always 0 before)
+noOverflow:                                 ;
+mov [dap.lba_lower], ebx                    ;set lower in dap
 
 ;load 1st sector of root folder
 mov ah, 0x42
@@ -56,7 +65,7 @@ int 0x13
 jc error.kernel
 
 ;move sectors from root folder to dap
-mov si, VBR_END + 0x200
+mov si, FOLDER_HEADER_OFFSET
 mov di, dap.sectors
 movsw
 
@@ -67,53 +76,53 @@ int 0x13
 jc error.kernel
 
 ;check fileNum >= 1
-mov eax, [VBR_END + 0x204]
+mov eax, [FOLDER_HEADER_FILE_NUM]
 cmp eax, 1
 jl error.kernel
 
 ;setup dap for loading file headers
 mov WORD [dap.sectors], 1
-mov WORD [dap.offset], VBR_END
+mov WORD [dap.offset], FILE_HEADER_OFFSET
 
 ;search for kernel.bin file
 ;stores lba of kernel.bin in bx
-mov ecx, [VBR_END + 0x204]   ;loop iterations = fileNum
-mov bx, VBR_END + 0x20E      ;address of first file lba
-fileLoop:                    ;
-    mov edx, [bx]            ;set lba_lower in dap
-    mov [dap.lba_lower], edx ;
-    add bx, 4                ;point to upper lba
-    mov edx, [bx]            ;set lba_upper in dap
-    mov [dap.lba_upper], edx ;
-    mov ah, 0x42             ;bios code for extended read
-    mov dl, [bootDrive]      ;set boot drive
-    mov si, dap              ;set dap address
-    int 0x13                 ;call extended read
-    jc error.kernel          ;
-    mov ax, KERNEL_BIN       ;load kernel.bin string
-    mov dx, VBR_END + 0x08   ;fileName address
-    call strCmp              ;check if fileName is kernel.bin
-    je fileLoopEnd           ;if kernel.bin is found and we can exit
-    add bx, 4                ;point to next lba
-    loop fileLoop            ;
-    jmp error.kernel         ;kernel couldn't be located error
-fileLoopEnd:                 ;
-sub bx, 4                    ;point to lba start, not upper half
+mov ecx, [FOLDER_HEADER_FILE_NUM]   ;loop iterations = fileNum
+mov bx, FOLDER_HEADER_FILE_LBA      ;address of first file lba
+fileLoop:                           ;
+    mov edx, [bx]                   ;set lba_lower in dap
+    mov [dap.lba_lower], edx        ;
+    add bx, 4                       ;point to upper lba
+    mov edx, [bx]                   ;set lba_upper in dap
+    mov [dap.lba_upper], edx        ;
+    mov ah, 0x42                    ;bios code for extended read
+    mov dl, [bootDrive]             ;set boot drive
+    mov si, dap                     ;set dap address
+    int 0x13                        ;call extended read
+    jc error.kernel                 ;
+    mov ax, KERNEL_BIN              ;load kernel.bin string
+    mov dx, FOLDER_HEADER_FILE_NAME ;fileName address
+    call strCmp                     ;check if fileName is kernel.bin
+    je fileLoopEnd                  ;if kernel.bin is found and we can exit
+    add bx, 4                       ;point to next lba
+    loop fileLoop                   ;
+    jmp error.kernel                ;kernel couldn't be located error
+fileLoopEnd:                        ;
+sub bx, 4                           ;point to lba start, not upper half
 
 ;setup dap for loading the kernel
-mov WORD [dap.offset], VBR_END ;set kernel memory offset
-mov eax, [bx]                  ;set eax to lba_lower
-add bx, 4                      ;point to lba_upper
-mov ecx, [bx]                  ;set ecx to lba_upper
-inc eax                        ;point to next sector which is kernel.bin
-jno noOverflow2                ;check for overflow
-inc ecx                        ;add 1 to upper
-jo error.kernel                ;if this overflows it's an error
-noOverflow2:                   ;
-mov [dap.lba_lower], eax       ;set lba in dap
-mov [dap.lba_upper], ecx       ;
-mov dx, [VBR_END]              ;load kernel.bin sectors into dx
-mov [dap.sectors], dx          ;set dp sectors
+mov WORD [dap.offset], FILE_HEADER_OFFSET ;set kernel memory offset
+mov eax, [bx]                             ;set eax to lba_lower
+add bx, 4                                 ;point to lba_upper
+mov ecx, [bx]                             ;set ecx to lba_upper
+inc eax                                   ;point to next sector which is kernel.bin
+jno noOverflow2                           ;check for overflow
+inc ecx                                   ;add 1 to upper
+jo error.kernel                           ;if this overflows it's an error
+noOverflow2:                              ;
+mov [dap.lba_lower], eax                  ;set lba in dap
+mov [dap.lba_upper], ecx                  ;
+mov dx, [FILE_HEADER_OFFSET]              ;load kernel.bin sectors into dx
+mov [dap.sectors], dx                     ;set dp sectors
 
 ;store kernel sectors for later
 mov [kernelSectors], dx
@@ -251,22 +260,22 @@ extendedVbr:
 
 ;setup identity paging for the first 2 megabytes
 ;the present bit an read/write bit is set on all entires
-mov edi, 0x1000            ;PML4 start address
-mov cr3, edi               ;point cr3 to PML4
-xor eax, eax               ;clear tables
-mov ecx, 4096              ;
-rep stosd                  ;
-mov DWORD [0x1000], 0x2003 ;point PML4 to PDP
-mov DWORD [0x2000], 0x3003 ;point PDP to PD
-mov DWORD [0x3000], 0x4003 ;point PD to PT
-mov edi, 0x4000            ;PT start address
-mov ebx, 0x00000003        ;start value
-mov ecx, 512               ;512 iterations
-pagingLoop:                ;
-    mov DWORD [edi], ebx   ;write entry
-    add ebx, 0x1000        ;update ebx to point to next memory location
-    add edi, 8             ;update edi to next PT entry
-    loop pagingLoop        ;
+mov edi, PML4_OFFSET                    ;PML4 start address
+mov cr3, edi                            ;point cr3 to PML4
+xor eax, eax                            ;clear tables
+mov ecx, 4096                           ;
+rep stosd                               ;
+mov DWORD [PML4_OFFSET], PDP_OFFSET + 3 ;point PML4 to PDP
+mov DWORD [PDP_OFFSET], PD_OFFSET + 3   ;point PDP to PD
+mov DWORD [PD_OFFSET], PT_OFFSET + 3    ;point PD to PT
+mov edi, PT_OFFSET                      ;PT start address
+mov ebx, 0x00000003                     ;start value
+mov ecx, 512                            ;512 iterations
+pagingLoop:                             ;
+    mov DWORD [edi], ebx                ;write entry
+    add ebx, 0x1000                     ;update ebx to point to next memory location
+    add edi, 8                          ;update edi to next PT entry
+    loop pagingLoop                     ;
 
 ;generate E820 memory map
 mov edx, 0x534D4150           ;smap code
@@ -341,12 +350,12 @@ mov gs, ax
 mov ss, ax
 
 ;move kernel
-cld                      ;clear direction flag
-mov rcx, [kernelSectors] ;load sectors into rcx
-shl rcx, 6               ;multiply by 64(each sector is 64 quad words)
-mov rsi, 0x8000          ;source address
-mov rdi, 0x100000        ;destination address
-rep movsq                ;repeat moving 64bits from source to destination
+cld                         ;clear direction flag
+mov rcx, [kernelSectors]    ;load sectors into rcx
+shl rcx, 6                  ;multiply by 64(each sector is 64 quad words)
+mov rsi, FILE_HEADER_OFFSET ;source address
+mov rdi, KERNEL_OFFSET      ;destination address
+rep movsq                   ;repeat moving 64bits from source to destination
 
 ;TODO
 ;modify mm to make the area the kernel is located reserved
@@ -356,7 +365,7 @@ mov si, [partitionEntry]
 mov dl, [bootDrive]
 
 ;jump to kernel (jumps to kernel_entry.asm)
-jmp 0x100000
+jmp KERNEL_OFFSET
 
 ;sector align extra space
 times 1024 - ($ - $$) db 0
