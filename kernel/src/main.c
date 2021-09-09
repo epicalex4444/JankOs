@@ -9,9 +9,6 @@
 #include "types.h"
 #include "memory_map.h"
 #include "gdt.h"
-#include "malloc.h"
-
-NORETURN void panic(void);
 
 /**
  * @brief kernel entry point
@@ -25,17 +22,15 @@ NORETURN void start_kernel(void) {
     init_gdt();
 
     if (init_memory_map()) {
-        panic();
+        i8 str[] = "memory map error\n";
+        print_string(str);
+        goto hang;
     }
 
-    init_malloc();
+    print_memory_map();
 
-    //there is no interupts/inputs, therefore no loop yet
-    panic();
-}
-
-NORETURN void panic(void) {
-    while (true) {
+    hang:
+    for(;;) {
         asm ("hlt");
     }
 }
