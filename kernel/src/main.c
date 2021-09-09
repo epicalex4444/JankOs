@@ -22,7 +22,7 @@ NORETURN void start_kernel(void) {
     init_gdt();
 
     if (init_memory_map()) {
-        i8 str[] = "memory map error\n";
+        i8 str[] = "couldn't parse memory map\n";
         print_string(str);
         goto hang;
     }
