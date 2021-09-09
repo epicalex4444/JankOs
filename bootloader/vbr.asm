@@ -27,14 +27,15 @@
 [bits 16]
 
 ;macros
-VBR_SECTORS: equ 2
+VBR_SECTORS: equ 3
 
 FILE_HEADER_OFFSET: equ 0x7C00 + VBR_SECTORS * 0x200
 FILE_HEADER_SECTORS: equ FILE_HEADER_OFFSET
+FILE_HEADER_FILE_NAME: equ FILE_HEADER_OFFSET + 8
 
 FOLDER_HEADER_OFFSET: equ FILE_HEADER_OFFSET + 0x200
+FOLDER_HEADER_SECTORS: equ FOLDER_HEADER_OFFSET
 FOLDER_HEADER_FILE_NUM: equ FOLDER_HEADER_OFFSET + 4
-FOLDER_HEADER_FILE_NAME: equ FILE_HEADER_OFFSET + 8
 FOLDER_HEADER_FILE_LBA: equ FOLDER_HEADER_OFFSET + 14
 
 MM_OFFSET: equ 0x5000
@@ -61,7 +62,7 @@ int 0x13
 jc error.kernel
 
 ;move root folder lba into dap
-mov WORD [dap.offset], FOLDER_HEADER_OFFSET ;set dap offset to 2 sectors after the vbr
+mov WORD [dap.offset], FOLDER_HEADER_OFFSET ;set dap offset to the folder header
 mov si, [partitionEntry]                    ;load partition entry address into si
 add si, 8                                   ;point to the lba in the partition entry
 mov ebx, [si]                               ;mov lba into ebx
@@ -78,7 +79,7 @@ int 0x13
 jc error.kernel
 
 ;move sectors from root folder to dap
-mov si, FOLDER_HEADER_OFFSET
+mov si, FOLDER_HEADER_SECTORS
 mov di, dap.sectors
 movsw
 
@@ -99,28 +100,28 @@ mov WORD [dap.offset], FILE_HEADER_OFFSET
 
 ;search for kernel.bin file
 ;stores lba of kernel.bin in bx
-mov ecx, [FOLDER_HEADER_FILE_NUM]   ;loop iterations = fileNum
-mov bx, FOLDER_HEADER_FILE_LBA      ;address of first file lba
-fileLoop:                           ;
-    mov edx, [bx]                   ;set lba_lower in dap
-    mov [dap.lba_lower], edx        ;
-    add bx, 4                       ;point to upper lba
-    mov edx, [bx]                   ;set lba_upper in dap
-    mov [dap.lba_upper], edx        ;
-    mov ah, 0x42                    ;bios code for extended read
-    mov dl, [bootDrive]             ;set boot drive
-    mov si, dap                     ;set dap address
-    int 0x13                        ;call extended read
-    jc error.kernel                 ;
-    mov ax, KERNEL_BIN                ;load kernel.bin string
-    mov dx, FOLDER_HEADER_FILE_NAME ;fileName address
-    call strCmp                     ;check if fileName is kernel.bin
-    je fileLoopEnd                  ;if kernel.bin is found and we can exit
-    add bx, 4                       ;point to next lba
-    loop fileLoop                   ;
-    jmp error.kernel                ;kernel couldn't be located error
-fileLoopEnd:                        ;
-sub bx, 4                           ;point to lba start, not upper half
+mov ecx, [FOLDER_HEADER_FILE_NUM] ;loop iterations = fileNum
+mov bx, FOLDER_HEADER_FILE_LBA    ;address of first file lba
+fileLoop:                         ;
+    mov edx, [bx]                 ;set lba_lower in dap
+    mov [dap.lba_lower], edx      ;
+    add bx, 4                     ;point to upper lba
+    mov edx, [bx]                 ;set lba_upper in dap
+    mov [dap.lba_upper], edx      ;
+    mov ah, 0x42                  ;bios code for extended read
+    mov dl, [bootDrive]           ;set boot drive
+    mov si, dap                   ;set dap address
+    int 0x13                      ;call extended read
+    jc error.kernel               ;
+    mov ax, KERNEL_BIN            ;load kernel.bin string
+    mov dx, FILE_HEADER_FILE_NAME ;fileName address
+    call strCmp                   ;check if fileName is kernel.bin
+    je fileLoopEnd                ;if kernel.bin is found and we can exit
+    add bx, 4                     ;point to next lba
+    loop fileLoop                 ;
+    jmp error.kernel              ;kernel couldn't be located error
+fileLoopEnd:                      ;
+sub bx, 4                         ;point to lba start, not upper half
 
 ;setup dap for loading the kernel
 mov WORD [dap.offset], TEMP_KERNEL_OFFSET ;set kernel memory offset
@@ -252,10 +253,10 @@ MM_ERROR:        db "memory map error", 0
 dap:
 .size:      db 0x10
 .null:      db 0
-.sectors:   dw 1
+.sectors:   dw VBR_SECTORS - 1
 .offset:    dw 0x7E00
 .segment:   dw 0
-.lba_lower: dd VBR_SECTORS
+.lba_lower: dd 2
 .lba_upper: dd 0
 
 partitionEntry: dw 0
@@ -366,19 +367,19 @@ mov ss, ax
 ;also finds the entry where the kernel fits into
 xor rcx, rcx               ;0 rcx
 mov cx, [MM_SIZE]          ;move mm.size into cx
-mov rdi, MM_ENTRIES        ;mov mm.entries address into rdi
+mov rsi, MM_ENTRIES        ;mov mm.entries address into rsi
 xor r8, r8                 ;0 rdx
 mov r8w, [kernelSectors]   ;mov kernel.sectors into dx
 shl r8, 6                  ;multiply rdx by 64(turns sectors to bytes)
 kernelLoop:                ;
-    mov r9, [rdi]          ;move mm.offset into r9
-    add rdi, 8             ;point to mm.length
-    mov r10, [rdi]         ;move mm.length into r10
-    add rdi, 8             ;point to mm.type
-    mov r11, [rdi]         ;move mm.type into r11
-    add rdi, 4             ;point to mm.acpi
-    mov r12, [rdi]         ;move mm.acpi into r12
-    add rdi, 4             ;point to next entry
+    mov r9, [rsi]          ;move mm.offset into r9
+    add rsi, 8             ;point to mm.length
+    mov r10, [rsi]         ;move mm.length into r10
+    add rsi, 8             ;point to mm.type
+    mov r11, [rsi]         ;move mm.type into r11
+    add rsi, 4             ;point to mm.acpi
+    mov r12, [rsi]         ;move mm.acpi into r12
+    add rsi, 4             ;point to next entry
     cmp r11d, 1            ;if mm.type != 1
     jne .invalid           ;
     test r12d, 1           ;if mm.acpi & 1
@@ -393,15 +394,14 @@ kernelLoop:                ;
     loop kernelLoop        ;
     jmp error.die          ;didn't find a valid entry error
     .valid:                ;
-    sub rdi, 24            ;point to valid mm entry
+    dec rcx                ;valid entry index
 
 ;move kernel
-cld                         ;clear direction flag
 mov rcx, [kernelSectors]    ;load sectors into rcx
 shl rcx, 6                  ;multiply by 64(each sector is 64 quad words)
 mov rsi, TEMP_KERNEL_OFFSET ;source address
 mov rdi, KERNEL_OFFSET      ;destination address
-rep movsq                   ;repeat moving 64bits from source to destination
+call movMemOverlap
 
 ;restore dl and si for use by the kernel
 mov si, [partitionEntry]
@@ -410,5 +410,37 @@ mov dl, [bootDrive]
 ;jump to kernel (jumps to kernel_entry.asm)
 jmp KERNEL_OFFSET
 
+;wrapper on rep movsq
+;it handles overlapping memory
+;doesn't mess up register states
+;params:
+;   rcx = QWORDS to mov
+;   rsi = source offset
+;   rdi = destination offset
+;returns: none
+movMemOverlap:
+push r8
+pushf
+push rcx
+push rsi
+push rdi
+
+;makes source and destination point to last element not the first
+mov r8, rcx
+dec r8
+shl r8, 3
+add rsi, r8
+add rdi, r8
+
+std
+rep movsq
+
+pop rdi
+pop rsi
+pop rcx
+popf
+pop r8
+ret
+
 ;sector align extra space
-times 1024 - ($ - $$) db 0
+times (VBR_SECTORS * 512) - ($ - $$) db 0
