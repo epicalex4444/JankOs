@@ -10,13 +10,15 @@
 ;set stack to 0x7C00
 ;setup screen/vga
 ;enable the A20 line
-;bootstrap itself to 0x600
+;bootstrap itself to OFFSET
 ;load vbr to 0x7C00
 ;set es:si to bootable partition entry base
 ;set dl to boot drive
 ;jump to the vbr
 
-[org 0x600]
+OFFSET: equ 0x600
+
+[org OFFSET]
 [bits 16]
 
 ;set segment registers to 0
@@ -33,10 +35,10 @@ mov ss, ax
 mov sp, 0x7C00
 mov bp, 0x7C00
 
-;save boot drive(dl)
+;save boot drive(dl) on stack
 push dx
 
-;enable A20 line
+;enable A20 line(this won't work on some outdated systems)
 in al, 0x92
 or al, 0x02
 out 0x92, al
@@ -56,14 +58,14 @@ xor bx, bx
 xor dx, dx
 int 0x10
 
-;return boot drive(dl)
+;return boot drive(dl) from stack
 pop dx
 
-;relocate self to 0x600
+;relocate self to OFFSET
 cld
 mov cx, 0x0080
 mov si, 0x7C00
-mov di, 0x0600
+mov di, OFFSET
 rep movsd
 
 ;jump to relocated address
@@ -72,15 +74,16 @@ jmp 0:relocate
 relocate:
 
 ;find bootable partition
+;returns si to point to the bootable partition
 mov si, pt1              ;set si to partition entry 1 base
 mov cx, 4                ;4 iterations
 partLoop:                ;
     test BYTE [si], 0x80 ;test for active bit
-    jne partLoopEnd      ;found active bit exit
+    jne .end             ;found active bit exit
     add si, 0x10         ;point to next entry
     loop partLoop        ;
     jmp error.partition  ;error if no bootable partion found
-partLoopEnd:             ;
+    .end:                ;
 
 ;check for extended read
 mov ah, 0x41
@@ -90,7 +93,7 @@ jc error.extendedRead
 cmp bx, 0xAA55
 jne error.extendedRead
 
-;save partion entry base
+;save partion entry base on stack
 push si
 
 ;mov partion lba start into dap
@@ -104,7 +107,7 @@ mov si, dap
 int 0x13
 jc error.readVbr
 
-;return partition entry base
+;return partition entry base from stack
 pop si
 
 ;check vbr boot signature
