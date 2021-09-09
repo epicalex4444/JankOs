@@ -135,11 +135,12 @@ jo error.kernel                           ;if this overflows it's an error
 noOverflow2:                              ;
 mov [dap.lba_lower], eax                  ;set lba in dap
 mov [dap.lba_upper], ecx                  ;
-mov dx, [FILE_HEADER_SECTORS]             ;load kernel.bin sectors into dx
+mov edx, [FILE_HEADER_SECTORS]            ;load kernel.bin sectors into dx(uses edx to 0 the top half for later)
 mov [dap.sectors], dx                     ;set dp sectors
 
-;store kernel sectors for later
-mov [kernelSectors], dx
+;store kernel size for later(multiple by 512 to store in bytes)
+shl edx, 9
+mov [kernelBytes], edx
 
 ;load kernel
 mov ah, 0x42
@@ -261,7 +262,7 @@ dap:
 
 partitionEntry: dw 0
 bootDrive: db 0
-kernelSectors: dd 0
+kernelBytes: dd 0
 
 ;pad sector
 times 510 - ($ - $$) db 0
@@ -368,9 +369,8 @@ mov ss, ax
 xor rcx, rcx               ;0 rcx
 mov cx, [MM_SIZE]          ;move mm.size into cx
 mov rsi, MM_ENTRIES        ;mov mm.entries address into rsi
-xor r8, r8                 ;0 rdx
-mov r8w, [kernelSectors]   ;mov kernel.sectors into dx
-shl r8, 6                  ;multiply rdx by 64(turns sectors to bytes)
+xor r8, r8                 ;0 r8
+mov r8d, [kernelBytes]     ;mov kernel.sectors into r8
 kernelLoop:                ;
     mov r9, [rsi]          ;move mm.offset into r9
     add rsi, 8             ;point to mm.length
@@ -395,10 +395,48 @@ kernelLoop:                ;
     jmp error.die          ;didn't find a valid entry error
     .valid:                ;
     dec rcx                ;valid entry index
+    sub rsi, 24            ;valid entry offset
+
+;make kernel be in reserved memory
+mov r8, KERNEL_OFFSET          ;move kernel.offset into r8
+cmp r8, [rsi]                  ;if mm.offset == kernel.offset
+je notSplitBelow               ;
+call pushMMDown                ;split entry into 2 copies
+inc rcx                        ;update index(pushMMDown uses the index)
+sub r8, [rsi]                  ;mm.length = 0x100000 - mm.offset
+add rsi, 8                     ;point to mm.length
+mov [rsi], r8                  ;
+add rsi, 16                    ;point to next entry
+mov QWORD [rsi], KERNEL_OFFSET ;set mm.offset to kernel.offset
+add rsi, 8                     ;point to mm.length
+mov r9, [rsi]                  ;r9 = entry2.length
+sub r9, r8                     ;entry2.length -= entry1.length
+mov [rsi], r9                  ;
+sub rsi, 8                     ;point to start of entry
+notSplitBelow:                 ;
+xor r8, r8                     ;
+mov r8d, [kernelBytes]         ;move kernel.length into r8
+add rsi, 8                     ;point to mm.length
+cmp r8, [rsi]                  ;if mm.length == kernel.length
+je notSplitAbove               ;
+call pushMMDown                ;split entry into 2 copies
+mov [rsi], r8                  ;mm.length = kernel.length
+add rsi, 16                    ;point to next entry
+mov r9, [rsi]                  ;move mm.offset into r9
+add r9, r8                     ;mm.offset += kernel.length
+mov [rsi], r9                  ;
+add rsi, 8                     ;point to mm.length
+mov r9, [rsi]                  ;move mm.length into r9
+sub r9, r8                     ;mm.length -= kernel.length
+mov [rsi], r9                  ;
+sub rsi, 32                    ;point to start of entry
+notSplitAbove:                 ;
+add rsi, 16                    ;point to mm.type
+mov DWORD [rsi], 2             ;set to reserved
 
 ;move kernel
-mov rcx, [kernelSectors]    ;load sectors into rcx
-shl rcx, 6                  ;multiply by 64(each sector is 64 quad words)
+xor rcx, rcx
+mov ecx, [kernelBytes]    ;load sectors into rcx
 mov rsi, TEMP_KERNEL_OFFSET ;source address
 mov rdi, KERNEL_OFFSET      ;destination address
 call movMemOverlap
@@ -441,6 +479,40 @@ pop rcx
 popf
 pop r8
 ret
+
+;params: rcx = current index
+;returns: none
+pushMMDown:
+    push rbx
+    push rcx
+    push r8
+    push rsi
+    push rdi
+
+    mov rax, rcx        ;calc rsi
+    mov r8, 24          ;
+    mul r8              ;
+    add rax, MM_ENTRIES ;
+    mov rsi, rax        ;
+    mov rdi, rsi        ;calc rdi
+    add rdi, 24         ;
+    xor rbx, rbx        ;0 rbx
+    mov ebx, [MM_SIZE]  ;increment mm size
+    inc ebx             ;
+    mov [MM_SIZE], ebx  ;
+    dec rbx             ;calc rcx
+    sub rbx, rcx        ;
+    mov rax, 3          ;
+    mul rbx             ;
+    mov rcx, rax        ;
+    call movMemOverlap  ;call memMove
+
+    pop rdi
+    pop rsi
+    pop r8
+    pop rcx
+    pop rbx
+    ret
 
 ;sector align extra space
 times (VBR_SECTORS * 512) - ($ - $$) db 0
