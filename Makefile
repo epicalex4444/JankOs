@@ -94,6 +94,7 @@ $(KERNEL_ELF): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJS)
 $(KERNEL_BIN): $(KERNEL_ELF)
 	objcopy -O binary $< $@
 
+#lba = vbr sectors + 1
 $(FS_BIN): $(KERNEL_BIN)
 	$(FS_COMPILER) 4 $@ $<,kernel.bin
 
