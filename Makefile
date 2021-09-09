@@ -95,7 +95,7 @@ $(KERNEL_BIN): $(KERNEL_ELF)
 	objcopy -O binary $< $@
 
 $(FS_BIN): $(KERNEL_BIN)
-	$(FS_COMPILER) 3 $@ $<,kernel.bin
+	$(FS_COMPILER) 4 $@ $<,kernel.bin
 
 #combines bootloader and kernel
 #then dynamically partitions
