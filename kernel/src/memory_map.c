@@ -132,3 +132,28 @@ void print_memory_map(void) {
         print_string(str3);
     }
 }
+
+/// prints the E820 memory map
+void print_E820(void) {
+    i8 str0[] = "E820 Memory Map:\nSize: ";
+    i8 str1[] = "\nStart             |Length            |Type      |Acpi      \n";
+    i8 str2[] = "|";
+    i8 str3[] = "\n";
+
+    u64* E820 = E820_ENTRIES;
+
+    print_string(str0);
+    print_hex((void*)E820_COUNT, 16);
+    print_string(str1);
+
+    for (u16 i = 0; i < (u16)(*E820_COUNT); ++i, E820 += 3) {
+        print_hex((void*)(E820), 64);
+        print_string(str2);
+        print_hex((void*)(E820 + 1), 64);
+        print_string(str2);
+        print_hex((void*)(u32*)(E820 + 2), 32);
+        print_string(str2);
+        print_hex((void*)((u32*)(E820 + 2) + 1), 32);
+        print_string(str3);
+    }
+}

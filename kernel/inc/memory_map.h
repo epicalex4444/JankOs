@@ -38,3 +38,4 @@ typedef struct {
 
 bool init_memory_map(void);
 void print_memory_map(void);
+void print_E820(void);
