@@ -1,12 +1,29 @@
-0x0 - 0x500, reserved
-0x500 - 0x1000, memory map
-0x1000 - 0x5000, page tables
-0x5000+ bitmap
-0x9FC00- stack
-0x9FC00 - 0x100000, reserved
-0x100000+ kernel and extra memory, defined by memory map at runtime
+this file explains how memory is layed out over time
+it is used to keep track of memory before the kernel sets of memory managment
+newer parts can override old memory entries
 
-stack and bitmap grow towards each other and can theoretically overlap
-mbr is at 0x600 but is overwritten later
-E820 is at 0x5000 but is overwritten
-vbr is at 0x7C00 but is fine to be overwritten by the bitmap
+//always unusable
+0x0 - 0x500
+0x9FC00 - 0x100000
+
+//should be usable without refering to memory map
+0x500 - 0x9FC00
+
+//allocations made before dynamic memory
+0x7C00 - 0x7E00, mbr
+0x7C00-, stack(grows downwards)
+0x600 - 0x800, mbr
+0x7C00 - 0x7E00, vbr sec1
+0x7C00+, vbr
+0x1000 - 0x2000, pml4
+0x2000 - 0x3000, pdp
+0x3000 - 0x4000, pd
+0x4000 - 0x5000, pt
+0x5000+ E820 memory map
+folder header is dynamically loaded after vbr with 1 sector of space
+file header is dynamically placed after the vbr
+kernel is dynamically placed after the vbr
+0x100000+, kernel
+0x9FC00-, stack
+0x500+, memory map
+0x1000+, page tables
