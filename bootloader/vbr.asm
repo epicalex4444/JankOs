@@ -450,34 +450,27 @@ je notSplitBelow        ;
 call pushMMDown         ;move entries down(duplicating the current entry)
 inc rcx                 ;update index(pushMMDown uses the index)
 sub r8, [rsi]           ;set r8 to kernel.offset - mmb.offset
-add rsi, 8              ;point to mmb.length
-mov [rsi], r8           ;mmb.length = kernel.offset - mmb.offset
-add rsi, 16             ;point to mmk
+mov [rsi + 8], r8       ;mmb.length = kernel.offset - mmb.offset
+add rsi, 24             ;point to mmk
 mov QWORD [rsi], KERNEL ;set mmk.offset to kernel.offset
-add rsi, 8              ;point to mmk.length
-mov r9, [rsi]           ;mmk.length -= mmb.length
+mov r9, [rsi + 8]       ;mmk.length -= mmb.length
 sub r9, r8              ;
-mov [rsi], r9           ;
-sub rsi, 8              ;point to mmk
+mov [rsi + 8], r9       ;
 notSplitBelow:          ;
 xor r8, r8              ;set r8 to 0
 mov r8d, [kernelBytes]  ;move kernel.length into r8
-add rsi, 8              ;point to mmk.length
-cmp r8, [rsi]           ;if mmk.length == kernel.length
+cmp r8, [rsi + 8]       ;if mmk.length == kernel.length
 je notSplitAbove        ;
-sub rsi, 8              ;point to mmk
 call pushMMDown         ;move entries down(duplicating the current entry)
-add rsi, 8              ;point to mmk.length
-mov [rsi], r8           ;mmk.length = kernel.length
-add rsi, 16             ;point to mma
+mov [rsi + 8], r8       ;mmk.length = kernel.length
+add rsi, 24             ;point to mma
 mov r9, [rsi]           ;mma.offset += kernel.length
 add r9, r8              ;
 mov [rsi], r9           ;
-add rsi, 8              ;point to mma.length
-mov r9, [rsi]           ;mma.length -= kernel.length
+mov r9, [rsi + 8]       ;mma.length -= kernel.length
 sub r9, r8              ;
-mov [rsi], r9           ;
-sub rsi, 32             ;point to mmk
+mov [rsi + 8], r9       ;
+sub rsi, 24             ;point to mmk
 notSplitAbove:          ;
 add rsi, 16             ;point to mmk.type
 mov DWORD [rsi], 2      ;set to reserved
