@@ -9,3 +9,4 @@
 #define PACKED __attribute__((packed))  ///< forces structs to have no empty space
 #define NAKED __attribute__((naked)) ///< makes it so gcc doesn't setup stack frame
 #define ALWAYS_INLINE __attribute__((always_inline)) ///< forces function to be inlined
+#define INLINE ALWAYS_INLINE inline ///< writing ALWAYS_INLINE inline is kind of long and dumb
