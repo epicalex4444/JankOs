@@ -33,7 +33,7 @@ void init_gdt() {
  */
 NAKED void load_gdt(GDTDescriptor* gdtDescriptor) {
     asm volatile (
-        "lgdt [%0]\n"
+        "lgdt %0\n"
         "mov ax, 0x10\n"
         "mov ds, ax\n"
         "mov es, ax\n"
@@ -44,10 +44,10 @@ NAKED void load_gdt(GDTDescriptor* gdtDescriptor) {
         "mov rax, 0x08\n"
         "push rax\n"
         "push rdi\n"
-        "retfq\n"
+        "retfq"
         :
-        : "r" (gdtDescriptor)
-        : "rax"
+        : "m" (*gdtDescriptor)
+        : "rdi", "rax", "memory"
     );
 }
 
