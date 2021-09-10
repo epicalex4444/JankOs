@@ -25,7 +25,7 @@
 
 ;controls length of file and memory offsets
 ;if changing this also need to change kernel.bin lba in the Makefile by the same amount
-VBR_SECTORS: equ 3
+VBR_SECTORS: equ 4
 
 ;file header offsets
 FILE_OFFSET: equ 0x7C00 + VBR_SECTORS * 0x200
@@ -193,9 +193,9 @@ VBR_LOAD_ERROR: db "couldn't load vbr", 0
 vbr_error:
     mov bx, VBR_LOAD_ERROR
     call print_string_16
-    .die:
-        hlt
-        jmp .die
+die:
+    hlt
+    jmp die
 
 ;params: bx = address of null terminated string
 ;returns: none
@@ -353,9 +353,7 @@ error:
         mov bx, MM_ERROR
     .end:
         call print_string_16
-    .die:
-        hlt
-        jmp .die
+        jmp die
 
 ;strings
 ROOT_FOLDER_LOAD_ERROR1: db "couldn't load 1st sector of root folder", 0
@@ -369,6 +367,7 @@ CPUID_ERROR:             db "cpuid error", 0
 EXT_FUNCS_ERROR:         db "extended function not supported", 0
 LONG_MODE_ERROR:         db "long mode not supported", 0
 MM_ERROR:                db "memory map error", 0
+KERNEL_MM_ERROR:         db "kernel can not fit into memory", 0
 KERNEL_BIN:              db "kernel.bin", 0
 
 gdt:
@@ -410,36 +409,36 @@ mov ss, ax
 ;returns:
 ;   rcx = index of entry
 ;   rsi = offset of entry
-xor rcx, rcx           ;set rcx to 0
-mov cx, [MM_SIZE]      ;move mm.size into cx
-mov rsi, MM_ENTRIES    ;mov mm.entries address into rsi
-xor r8, r8             ;set r8 to 0
-mov r8d, [kernelBytes] ;mov kernelBytes into r8
-kernelLoop:            ;
-    mov r9, [rsi]      ;move mm.offset into r9
-    add rsi, 8         ;point to mm.length
-    mov r10, [rsi]     ;move mm.length into r10
-    add rsi, 8         ;point to mm.type
-    mov r11, [rsi]     ;move mm.type into r11
-    add rsi, 4         ;point to mm.acpi
-    mov r12, [rsi]     ;move mm.acpi into r12
-    add rsi, 4         ;point to next entry
-    cmp r11d, 1        ;if mm.type != 1
-    jne .invalid       ;
-    test r12d, 1       ;if mm.acpi & 1
-    je .invalid        ;
-    cmp r9, KERNEL     ;if mm.offset > kernel.offset
-    jg .invalid        ;
-    add r8, KERNEL     ;add kernel.length to kernel.offset
-    cmp r10, r8        ;if mm.length < kernel.length + kerneloffset
-    jl .invalid        ;
-    jmp .valid         ;passed all checks kernel can fit in this entry
-    .invalid:          ;
-    loop kernelLoop    ;
-    jmp error.die      ;loop ended without finding a valid entry
-    .valid:            ;
-    dec rcx            ;decrement rcx to make it the index of the valid entry
-    sub rsi, 24        ;decrement rsi to make it the offset of the valid entry
+xor rcx, rcx            ;set rcx to 0
+mov cx, [MM_SIZE]       ;move mm.size into cx
+mov rsi, MM_ENTRIES     ;mov mm.entries address into rsi
+xor r8, r8              ;set r8 to 0
+mov r8d, [kernelBytes]  ;mov kernelBytes into r8
+kernelLoop:             ;
+    mov r9, [rsi]       ;move mm.offset into r9
+    add rsi, 8          ;point to mm.length
+    mov r10, [rsi]      ;move mm.length into r10
+    add rsi, 8          ;point to mm.type
+    mov r11, [rsi]      ;move mm.type into r11
+    add rsi, 4          ;point to mm.acpi
+    mov r12, [rsi]      ;move mm.acpi into r12
+    add rsi, 4          ;point to next entry
+    cmp r11d, 1         ;if mm.type != 1
+    jne .invalid        ;
+    test r12d, 1        ;if mm.acpi & 1
+    je .invalid         ;
+    cmp r9, KERNEL      ;if mm.offset > kernel.offset
+    jg .invalid         ;
+    add r8, KERNEL      ;add kernel.length to kernel.offset
+    cmp r10, r8         ;if mm.length < kernel.length + kerneloffset
+    jl .invalid         ;
+    jmp .valid          ;passed all checks kernel can fit in this entry
+    .invalid:           ;
+    loop kernelLoop     ;
+    jmp kernel_mm_error ;loop ended without finding a valid entry
+    .valid:             ;
+    dec rcx             ;decrement rcx to make it the index of the valid entry
+    sub rsi, 24         ;decrement rsi to make it the offset of the valid entry
 
 ;reserve the memory the kernel is in
 ;mmb = memory map below kernel
@@ -492,6 +491,34 @@ call movMemOverlap     ;rep movsq but can handle overlaps
 
 ;jump to kernel (jumps to kernel_entry.asm)
 jmp KERNEL
+
+kernel_mm_error:
+    mov ebx, KERNEL_MM_ERROR
+    call print_string_64
+    jmp die
+
+;doesn't handle newlines and cursor moving but who cares
+;params: ebx = address of null terminated string
+;returns: none
+print_string_64:
+    push rdi
+    push rbx
+    push rax
+    mov rdi, 0xB8000      ;video memory
+    mov ah, 0x0F          ;white on black colours
+    .loop:                ;
+        mov al, [ebx]     ;load char into al
+        test al, al       ;test if al is 0
+        jz .exit          ;if 0 exit
+        mov [rdi], ax     ;
+        inc ebx           ;point to next char
+        add rdi, 2        ;point to next video memory entry
+        jmp .loop         ;
+    .exit:                ;
+        pop rax           ;
+        pop rbx           ;
+        pop rdi           ;
+        ret               ;
 
 ;wrapper on rep movsq
 ;it handles overlapping memory

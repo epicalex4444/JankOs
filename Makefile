@@ -96,7 +96,7 @@ $(KERNEL_BIN): $(KERNEL_ELF)
 
 #lba = vbr sectors + 1
 $(FS_BIN): $(KERNEL_BIN)
-	$(FS_COMPILER) 4 $@ $<,kernel.bin
+	$(FS_COMPILER) 5 $@ $<,kernel.bin
 
 #combines bootloader and kernel
 #then dynamically partitions
