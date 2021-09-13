@@ -5,6 +5,7 @@
 
 #include "print.h"
 #include "string.h"
+#include "vga.h"
 
 /**
  * @brief updates the pos to be at the start of the next line
@@ -26,7 +27,7 @@ u16 newline(u16 pos) {
  *          Cursor is updated to be after the last char,
  *          wraps around to start if it gets to the end.
  */
-void print_string(i8* str) {
+void print_string(u8* str) {
     u16 pos = get_cursor_pos();
 
     while (*str != 0) {

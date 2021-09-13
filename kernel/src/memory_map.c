@@ -110,50 +110,44 @@ bool init_memory_map() {
 
 /// prints the memory map
 void print_memory_map(void) {
-    i8 str0[] = "Memory Map:\nSize: ";
-    i8 str1[] = "\nStart             |Length            |Type      |Acpi      \n";
-    i8 str2[] = "|";
-    i8 str3[] = "\n";
+    u8 seperator[] = "|";
 
     MemoryMap* mM = MM_BASE;
 
-    print_string(str0);
+    print_string((u8*)"Memory Map:\nSize: ");
     print_hex((void*)&(mM->size), 16);
-    print_string(str1);
+    print_string((u8*)"\nStart             |Length            |Type      |Acpi      \n");
 
     for (u16 i = 0; i < mM->size; ++i) {
         print_hex((void*)&(mM->entries[i].start), 64);
-        print_string(str2);
+        print_string(seperator);
         print_hex((void*)&(mM->entries[i].length), 64);
-        print_string(str2);
+        print_string(seperator);
         print_hex((void*)&(mM->entries[i].type), 32);
-        print_string(str2);
+        print_string(seperator);
         print_hex((void*)&(mM->entries[i].acpi), 32);
-        print_string(str3);
+        print_string((u8*)"\n");
     }
 }
 
 /// prints the E820 memory map
 void print_E820(void) {
-    i8 str0[] = "E820 Memory Map:\nSize: ";
-    i8 str1[] = "\nStart             |Length            |Type      |Acpi      \n";
-    i8 str2[] = "|";
-    i8 str3[] = "\n";
+    u8 seperator[] = "|";
 
     u64* E820 = E820_ENTRIES;
 
-    print_string(str0);
+    print_string((u8*)"E820 Memory Map:\nSize: ");
     print_hex((void*)E820_COUNT, 16);
-    print_string(str1);
+    print_string((u8*)"\nStart             |Length            |Type      |Acpi      \n");
 
     for (u16 i = 0; i < (u16)(*E820_COUNT); ++i, E820 += 3) {
         print_hex((void*)(E820), 64);
-        print_string(str2);
+        print_string(seperator);
         print_hex((void*)(E820 + 1), 64);
-        print_string(str2);
+        print_string(seperator);
         print_hex((void*)(u32*)(E820 + 2), 32);
-        print_string(str2);
+        print_string(seperator);
         print_hex((void*)((u32*)(E820 + 2) + 1), 32);
-        print_string(str3);
+        print_string((u8*)"\n");
     }
 }
