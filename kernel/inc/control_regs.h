@@ -9,38 +9,38 @@
 
 INLINE u64 read_cr0(void) {
     u64 val;
-    asm volatile ("mov cr0, %0" : "=r"(val));
+    asm volatile ("mov %0, cr0" : "=r"(val));
     return val;
 }
 
 INLINE u64 read_cr2(void) {
     u64 val;
-    asm volatile ("mov cr2, %0" : "=r"(val));
+    asm volatile ("mov %0, cr2" : "=r"(val));
     return val;
 }
 
 INLINE u64 read_cr3(void) {
     u64 val;
-    asm volatile ("mov cr3, %0" : "=r"(val));
+    asm volatile ("mov %0, cr3" : "=r"(val));
     return val;
 }
 
 INLINE u64 read_cr4(void) {
     u64 val;
-    asm volatile ("mov cr4, %0" : "=r"(val));
+    asm volatile ("mov %0, cr4" : "=r"(val));
     return val;
 }
 
 INLINE void write_cr0(u64 val) {
-    asm volatile ("mov cr0, %0" : "r"(val));
+    asm volatile ("mov cr0, %0" : : "r"(val));
 }
 
 INLINE void write_cr3(u64 val) {
-    asm volatile ("mov cr3, %0" : "r"(val));
+    asm volatile ("mov cr3, %0" : : "r"(val));
 }
 
 INLINE void write_cr4(u64 val) {
-    asm volatile ("mov cr4, %0" : "r"(val));
+    asm volatile ("mov cr4, %0" : : "r"(val));
 }
 
 INLINE u64 rdmsr(u64 msr) {
